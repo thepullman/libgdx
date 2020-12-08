@@ -144,8 +144,8 @@ public class ModelBuilder {
 		meshPart.id = id;
 		meshPart.primitiveType = primitiveType;
 		meshPart.mesh = mesh;
-		meshPart.indexOffset = offset;
-		meshPart.numVertices = size;
+		meshPart.offset = offset;
+		meshPart.size = size;
 		part(meshPart, material);
 		return meshPart;
 	}
@@ -332,7 +332,7 @@ public class ModelBuilder {
 	public Model createSphere (float width, float height, float depth, int divisionsU, int divisionsV, int primitiveType,
 		final Material material, final long attributes, float angleUFrom, float angleUTo, float angleVFrom, float angleVTo) {
 		begin();
-		part("cylinder", primitiveType, attributes, material).sphere(width, height, depth, divisionsU, divisionsV, angleUFrom,
+		part("sphere", primitiveType, attributes, material).sphere(width, height, depth, divisionsU, divisionsV, angleUFrom,
 			angleUTo, angleVFrom, angleVTo);
 		return end();
 	}

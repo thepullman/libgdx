@@ -1,3 +1,19 @@
+/*******************************************************************************
+ * Copyright 2011 See AUTHORS file.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ******************************************************************************/
+
 package com.badlogic.gdx.setup;
 
 
@@ -6,29 +22,34 @@ import java.util.HashMap;
 public class DependencyBank {
 
 	//Versions
-	static String libgdxVersion = "1.6.5";
+	static String libgdxVersion = "1.9.12";
 	//Temporary snapshot version, we need a more dynamic solution for pointing to the latest nightly
-	static String libgdxNightlyVersion = "1.6.6-SNAPSHOT";
-	static String roboVMVersion = "1.6.0";
-	static String buildToolsVersion = "20.0.0";
-	static String androidAPILevel = "20";
-	static String gwtVersion = "2.6.0";
+	static String libgdxNightlyVersion = "1.9.13-SNAPSHOT";
+	static String roboVMVersion = "2.3.11";
+	static String buildToolsVersion = "29.0.2";
+	static String androidAPILevel = "29";
+	static String gwtVersion = "2.8.2";
 
 	//Repositories
+	static String mavenLocal = "mavenLocal()";
 	static String mavenCentral = "mavenCentral()";
 	static String jCenter = "jcenter()";
+	static String google = "google()";
+	static String gradlePlugins = "https://plugins.gradle.org/m2/";
 	static String libGDXSnapshotsUrl = "https://oss.sonatype.org/content/repositories/snapshots/";
 	static String libGDXReleaseUrl = "https://oss.sonatype.org/content/repositories/releases/";
 
 	//Project plugins
-	static String gwtPluginImport = "de.richsource.gradle.plugins:gwt-gradle-plugin:0.6";
-	static String androidPluginImport = "com.android.tools.build:gradle:1.2.3";
-	static String roboVMPluginImport = "org.robovm:robovm-gradle-plugin:" + roboVMVersion;
-	
+	static String gwtPluginImport = "org.wisepersist:gwt-gradle-plugin:1.0.13";
+	static String grettyPluginImport = "org.gretty:gretty:3.0.2";
+	static String androidPluginImport = "com.android.tools.build:gradle:3.4.3";
+	static String roboVMPluginImport = "com.mobidevelop.robovm:robovm-gradle-plugin:" + roboVMVersion;
+
+
 	//Extension versions
-	static String box2DLightsVersion = "1.4";
-	static String ashleyVersion = "1.6.0";
-	static String aiVersion = "1.5.0";
+	static String box2DLightsVersion = "1.5";
+	static String ashleyVersion = "1.7.3";
+	static String aiVersion = "1.8.2";	
 
 	HashMap<ProjectDependency, Dependency> gdxDependencies = new HashMap<ProjectDependency, Dependency>();
 
@@ -53,7 +74,7 @@ public class DependencyBank {
 	 * This enum will hold all dependencies available for libgdx, allowing the setup to pick the ones needed by default,
 	 * and allow the option to choose extensions as the user wishes.
 	 * <p/>
-	 * These depedency strings can be later used in a simple gradle plugin to manipulate the users project either after/before
+	 * These dependency strings can be later used in a simple gradle plugin to manipulate the users project either after/before
 	 * project generation
 	 *
 	 * @see Dependency for the object that handles sub-module dependencies. If no dependency is found for a sub-module, ie
@@ -63,8 +84,8 @@ public class DependencyBank {
 		GDX(
 			new String[]{"com.badlogicgames.gdx:gdx:$gdxVersion"},
 			new String[]{"com.badlogicgames.gdx:gdx-backend-lwjgl:$gdxVersion", "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"},
-			new String[]{"com.badlogicgames.gdx:gdx-backend-android:$gdxVersion", "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi", "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi-v7a", "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86"},
-			new String[]{"org.robovm:robovm-rt:$roboVMVersion", "org.robovm:robovm-cocoatouch:$roboVMVersion", "com.badlogicgames.gdx:gdx-backend-robovm:$gdxVersion", "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-ios"},
+			new String[]{"com.badlogicgames.gdx:gdx-backend-android:$gdxVersion", "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi", "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi-v7a", "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-arm64-v8a", "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86", "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86_64"},
+			new String[]{"com.mobidevelop.robovm:robovm-rt:$roboVMVersion", "com.mobidevelop.robovm:robovm-cocoatouch:$roboVMVersion", "com.badlogicgames.gdx:gdx-backend-robovm:$gdxVersion", "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-ios"},
 			new String[]{"com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion", "com.badlogicgames.gdx:gdx:$gdxVersion:sources", "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion:sources"},
 			new String[]{"com.badlogic.gdx.backends.gdx_backends_gwt"},
 			
@@ -73,7 +94,7 @@ public class DependencyBank {
 		BULLET(
 			new String[]{"com.badlogicgames.gdx:gdx-bullet:$gdxVersion"},
 			new String[]{"com.badlogicgames.gdx:gdx-bullet-platform:$gdxVersion:natives-desktop"},
-			new String[]{"com.badlogicgames.gdx:gdx-bullet:$gdxVersion", "com.badlogicgames.gdx:gdx-bullet-platform:$gdxVersion:natives-armeabi", "com.badlogicgames.gdx:gdx-bullet-platform:$gdxVersion:natives-armeabi-v7a", "com.badlogicgames.gdx:gdx-bullet-platform:$gdxVersion:natives-x86"},
+			new String[]{"com.badlogicgames.gdx:gdx-bullet:$gdxVersion", "com.badlogicgames.gdx:gdx-bullet-platform:$gdxVersion:natives-armeabi", "com.badlogicgames.gdx:gdx-bullet-platform:$gdxVersion:natives-armeabi-v7a", "com.badlogicgames.gdx:gdx-bullet-platform:$gdxVersion:natives-arm64-v8a", "com.badlogicgames.gdx:gdx-bullet-platform:$gdxVersion:natives-x86", "com.badlogicgames.gdx:gdx-bullet-platform:$gdxVersion:natives-x86_64"},
 			new String[]{"com.badlogicgames.gdx:gdx-bullet-platform:$gdxVersion:natives-ios"},
 			null,
 			null,
@@ -83,7 +104,7 @@ public class DependencyBank {
 		FREETYPE(
 			new String[]{"com.badlogicgames.gdx:gdx-freetype:$gdxVersion"},
 			new String[]{"com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"},
-			new String[]{"com.badlogicgames.gdx:gdx-freetype:$gdxVersion", "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-armeabi", "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-armeabi-v7a", "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-x86"},
+			new String[]{"com.badlogicgames.gdx:gdx-freetype:$gdxVersion", "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-armeabi", "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-armeabi-v7a", "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-arm64-v8a", "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-x86", "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-x86_64"},
 			new String[]{"com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-ios"},
 			null,
 			null,
@@ -113,7 +134,7 @@ public class DependencyBank {
 		BOX2D(
 			new String[]{"com.badlogicgames.gdx:gdx-box2d:$gdxVersion"},
 			new String[]{"com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-desktop"},
-			new String[]{"com.badlogicgames.gdx:gdx-box2d:$gdxVersion", "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-armeabi", "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-armeabi-v7a", "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-x86"},
+			new String[]{"com.badlogicgames.gdx:gdx-box2d:$gdxVersion", "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-armeabi", "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-armeabi-v7a", "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-arm64-v8a", "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-x86", "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-x86_64"},
 			new String[]{"com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-ios"},
 			new String[]{"com.badlogicgames.gdx:gdx-box2d:$gdxVersion:sources", "com.badlogicgames.gdx:gdx-box2d-gwt:$gdxVersion:sources"},
 			new String[]{"com.badlogic.gdx.physics.box2d.box2d-gwt"},
@@ -196,26 +217,24 @@ public class DependencyBank {
 
 
 	public enum ProjectType {
-		CORE("core", new String[]{"java"}),
-		DESKTOP("desktop", new String[]{"java"}),
-		ANDROID("android", new String[]{"android"}),
-		IOS("ios", new String[]{"java", "robovm"}),
-		HTML("html", new String[]{"gwt", "war"});
+		CORE("core"),
+		DESKTOP("desktop"),
+		ANDROID("android"),
+		IOS("ios"),
+		HTML("html");
 
 		private final String name;
-		private final String[] plugins;
 
-		ProjectType(String name, String plugins[]) {
+		ProjectType(String name) {
 			this.name = name;
-			this.plugins = plugins;
 		}
 
 		public String getName() {
 			return name;
 		}
 
-		public String[] getPlugins() {
-			return plugins;
+		public String[] getPlugins(Language sourceLanguage) {
+			return sourceLanguage.platformPlugins[ordinal()];
 		}
 	}
 

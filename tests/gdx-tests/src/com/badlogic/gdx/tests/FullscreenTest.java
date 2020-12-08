@@ -18,6 +18,7 @@ package com.badlogic.gdx.tests;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Graphics.DisplayMode;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -53,15 +54,18 @@ public class FullscreenTest extends GdxTest {
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
 		batch.begin();
+		batch.setColor(Gdx.input.getX() < Gdx.graphics.getSafeInsetLeft() ||
+				Gdx.input.getX() + tex.getWidth() > Gdx.graphics.getWidth() - Gdx.graphics.getSafeInsetRight()
+				? Color.RED : Color.WHITE);
 		batch.draw(tex, Gdx.input.getX(), Gdx.graphics.getHeight() - Gdx.input.getY());
 		font.draw(batch, "" + Gdx.graphics.getWidth() + ", " + Gdx.graphics.getHeight(), 0, 20);
 		batch.end();
 		
 		if (Gdx.input.justTouched()) {
 			if (fullscreen) {
-				Gdx.graphics.setDisplayMode(480, 320, false);
+				Gdx.graphics.setWindowedMode(480, 320);
 				batch.getProjectionMatrix().setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-				Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+				Gdx.gl.glViewport(0, 0, Gdx.graphics.getBackBufferWidth(), Gdx.graphics.getBackBufferHeight());
 				fullscreen = false;
 			} else {
 				DisplayMode m = null;
@@ -75,9 +79,9 @@ public class FullscreenTest extends GdxTest {
 					}
 				}
 				
-				Gdx.graphics.setDisplayMode(m);
+				Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
 				batch.getProjectionMatrix().setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-				Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+				Gdx.gl.glViewport(0, 0, Gdx.graphics.getBackBufferWidth(), Gdx.graphics.getBackBufferHeight());
 				fullscreen = true;
 			}
 		}
@@ -86,7 +90,9 @@ public class FullscreenTest extends GdxTest {
 	@Override
 	public void resize (int width, int height) {
 		Gdx.app.log("FullscreenTest", "resized: " + width + ", " + height);
-		Gdx.gl.glViewport(0, 0, width, height);
+		Gdx.app.log("FullscreenTest", "safe insets: " + Gdx.graphics.getSafeInsetLeft() +
+				"/" + Gdx.graphics.getSafeInsetRight());
+		batch.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
 	}
 
 	@Override

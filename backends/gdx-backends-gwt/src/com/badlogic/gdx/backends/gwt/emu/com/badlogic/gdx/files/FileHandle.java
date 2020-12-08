@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright 2011 See AUTHORS file.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,17 +18,38 @@ package com.badlogic.gdx.files;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 
 import com.badlogic.gdx.Files.FileType;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 
 public class FileHandle {
+	protected File file;
+	protected FileType type;
+
+	protected FileHandle () {
+	}
+
+	public FileHandle (String fileName) {
+	}
+
+	public FileHandle (File file) {
+	}
+
+	protected FileHandle (String fileName, FileType type) {
+	}
+
+	protected FileHandle (File file, FileType type) {
+	}
+
 	public String path () {
 		throw new GdxRuntimeException("Stub");
 	}
@@ -114,6 +135,18 @@ public class FileHandle {
 	 * @param size the number of bytes to read, see {@link #length()}
 	 * @return the number of read bytes */
 	public int readBytes (byte[] bytes, int offset, int size) {
+		throw new GdxRuntimeException("Stub");
+	}
+
+	/** Attempts to memory map this file in READ_ONLY mode. Android files must not be compressed.
+	 * @throws GdxRuntimeException if this file handle represents a directory, doesn't exist, or could not be read, or memory mapping fails, or is a {@link FileType#Classpath} file. */
+	public ByteBuffer map () {
+		throw new GdxRuntimeException("Stub");
+	}
+
+	/** Attempts to memory map this file. Android files must not be compressed.
+	 * @throws GdxRuntimeException if this file handle represents a directory, doesn't exist, or could not be read, or memory mapping fails, or is a {@link FileType#Classpath} file. */
+	public ByteBuffer map (FileChannel.MapMode mode) {
 		throw new GdxRuntimeException("Stub");
 	}
 
@@ -271,6 +304,18 @@ public class FileHandle {
 	 * @throw GdxRuntimeException if this file handle is a {@link FileType#Classpath} or {@link FileType#Internal} file. */
 	public boolean deleteDirectory () {
 		throw new GdxRuntimeException("Stub");
+	}
+
+	/** Deletes all children of this directory, recursively.
+	 * @throws GdxRuntimeException if this file handle is a {@link FileType#Classpath} or {@link FileType#Internal} file. */
+	public void emptyDirectory () {
+		throw new GdxRuntimeException("Not available on GWT");
+	}
+
+	/** Deletes all children of this directory, recursively. Optionally preserving the folder structure.
+	 * @throws GdxRuntimeException if this file handle is a {@link FileType#Classpath} or {@link FileType#Internal} file. */
+	public void emptyDirectory (boolean preserveTree) {
+		throw new GdxRuntimeException("Not available on GWT");
 	}
 
 	/** Copies this file or directory to the specified file or directory. If this handle is a file, then 1) if the destination is a

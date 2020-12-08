@@ -17,6 +17,7 @@
 package com.badlogic.gdx.tests;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Input.TextInputListener;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -32,6 +33,18 @@ public class TextInputDialogTest extends GdxTest {
 		message = "Touch screen for dialog";
 		batch = new SpriteBatch();
 		font = new BitmapFont();
+		
+		Gdx.input.getTextInput(new TextInputListener() {
+			@Override
+			public void input (String text) {
+				message = "message: " + text + ", touch screen for new dialog";
+			}
+
+			@Override
+			public void canceled () {
+				message = "cancled by user";
+			}
+		}, "enter something funny", "funny", "something funny", Input.OnscreenKeyboardType.Default);
 	}
 
 	public void render () {
@@ -41,17 +54,7 @@ public class TextInputDialogTest extends GdxTest {
 		batch.end();
 
 		if (Gdx.input.justTouched()) {
-			Gdx.input.getTextInput(new TextInputListener() {
-				@Override
-				public void input (String text) {
-					message = "message: " + text + ", touch screen for new dialog";
-				}
-
-				@Override
-				public void canceled () {
-					message = "cancled by user";
-				}
-			}, "enter something funny", "funny", "something funny");
+			
 		}
 	}
 }

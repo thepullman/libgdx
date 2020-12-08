@@ -38,9 +38,9 @@ import com.badlogic.gdx.utils.Disposable;
  * 
  * A specific Shader instance might be (and usually is) dedicated to a specific type of {@link Renderable}. For example it might
  * use a {@link ShaderProgram} that is compiled with uniforms (shader input) for specific {@link Attribute} types. Therefore the
- * {@link #canRender(Renderable)} method can be used to check if the Shader instance can be used for a specific {@link Renderable}
- * . Rendering a {@link Renderable} using a Shader for which {@link #canRender(Renderable)} returns false might result in
- * unpredicted behavior or crash the application.</p>
+ * {@link #canRender(Renderable)} method can be used to check if the Shader instance can be used for a specific
+ * {@link Renderable}. Rendering a {@link Renderable} using a Shader for which {@link #canRender(Renderable)} returns false might
+ * result in unpredicted behavior or crash the application.</p>
  * 
  * To manage multiple shaders and create a new shader when required, a {@link ShaderProvider} can be used. Therefore, in practice,
  * a specific Shader implementation is usually accompanied by a specific {@link ShaderProvider} implementation (usually extending
@@ -77,8 +77,8 @@ public interface Shader extends Disposable {
 	/** Renders the {@link Renderable}, must be called between {@link #begin(Camera, RenderContext)} and {@link #end()}. The Shader
 	 * instance might not be able to render every type of {@link Renderable}s. Use the {@link #canRender(Renderable)} method to
 	 * check if the Shader is capable of rendering a specific {@link Renderable}.
-	 * @param renderable The renderable to render, all required fields (e.g. {@link Renderable#mesh}, {@link Renderable#material}
-	 *           and others) must be set. The {@link Renderable#shader} field will be ignored. */
+	 * @param renderable The renderable to render, all required fields (e.g. {@link Renderable#material} and others) must be set.
+	 *           The {@link Renderable#shader} field will be ignored. */
 	void render (final Renderable renderable);
 
 	/** Cleanup the context so other shaders can render. Must be called when done rendering using the {@link #render(Renderable)}

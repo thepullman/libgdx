@@ -1,13 +1,19 @@
 
 package com.badlogic.gdx.tests;
 
-import java.util.ArrayList;
-
 import com.badlogic.gdx.tests.utils.GdxTest;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.ArrayMap;
 import com.badlogic.gdx.utils.Json;
+import com.badlogic.gdx.utils.JsonWriter.OutputType;
+import com.badlogic.gdx.utils.LongMap;
+import com.badlogic.gdx.utils.ObjectFloatMap;
 import com.badlogic.gdx.utils.ObjectMap;
 import com.badlogic.gdx.utils.reflect.ArrayReflection;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class JsonTest extends GdxTest {
 	Json json;
@@ -43,9 +49,18 @@ public class JsonTest extends GdxTest {
 		test.map.put("one", 1);
 		test.map.put("two", 2);
 		test.map.put("nine", 9);
-		test.array = new Array();
-		test.array.add("meow");
-		test.array.add("moo");
+		test.stringArray = new Array();
+		test.stringArray.add("meow");
+		test.stringArray.add("moo");
+		test.objectArray = new Array();
+		test.objectArray.add("meow");
+		test.objectArray.add(new Test1());
+		test.longMap = new LongMap<String>(4);
+		test.longMap.put(42L, "The Answer");
+		test.longMap.put(0x9E3779B97F4A7C15L, "Golden Ratio");
+		test.stringFloatMap = new ObjectFloatMap<String>(4);
+		test.stringFloatMap.put("point one", 0.1f);
+		test.stringFloatMap.put("point double oh seven", 0.007f);
 		test.someEnum = SomeEnum.b;
 		roundTrip(test);
 
@@ -55,14 +70,17 @@ public class JsonTest extends GdxTest {
 		test = new Test1();
 		roundTrip(test);
 
-		test.array = new Array();
+		test.stringArray = new Array();
 		roundTrip(test);
 
-		test.array.add("meow");
+		test.stringArray.add("meow");
 		roundTrip(test);
 
-		test.array.add("moo");
+		test.stringArray.add("moo");
 		roundTrip(test);
+
+		TestMapGraph objectGraph = new TestMapGraph();
+		testObjectGraph(objectGraph, "exoticTypeName");
 
 		test = new Test1();
 		test.map = new ObjectMap();
@@ -102,6 +120,29 @@ public class JsonTest extends GdxTest {
 		test(text, object);
 
 		return text;
+	}
+
+	private void testObjectGraph (TestMapGraph object, String typeName) {
+		Json json = new Json();
+		json.setTypeName(typeName);
+		json.setUsePrototypes(false);
+		json.setIgnoreUnknownFields(true);
+		json.setOutputType(OutputType.json);
+		String text = json.prettyPrint(object);
+
+		TestMapGraph object2 = json.fromJson(TestMapGraph.class, text);
+
+		if (object2.map.size() != object.map.size()) {
+			throw new RuntimeException("Too many items in deserialized json map.");
+		}
+
+		if (object2.objectMap.size != object.objectMap.size) {
+			throw new RuntimeException("Too many items in deserialized json object map.");
+		}
+
+		if (object2.arrayMap.size != object.arrayMap.size) {
+			throw new RuntimeException("Too many items in deserialized json map.");
+		}
 	}
 
 	private void test (String text, Object object) {
@@ -169,7 +210,10 @@ public class JsonTest extends GdxTest {
 		public byte[] byteArrayField;
 		public Object object;
 		public ObjectMap<String, Integer> map;
-		public Array<String> array;
+		public Array<String> stringArray;
+		public Array objectArray;
+		public LongMap<String> longMap;
+		public ObjectFloatMap<String> stringFloatMap;
 		public SomeEnum someEnum;
 
 		public boolean equals (Object obj) {
@@ -224,9 +268,9 @@ public class JsonTest extends GdxTest {
 				if (!map.values().toArray().equals(other.map.values().toArray())) return false;
 			}
 
-			if (array != other.array) {
-				if (array == null || other.array == null) return false;
-				if (!array.equals(other.array)) return false;
+			if (stringArray != other.stringArray) {
+				if (stringArray == null || other.stringArray == null) return false;
+				if (!stringArray.equals(other.stringArray)) return false;
 			}
 
 			if (byteField != other.byteField) return false;
@@ -237,6 +281,21 @@ public class JsonTest extends GdxTest {
 			if (longField != other.longField) return false;
 			if (shortField != other.shortField) return false;
 			return true;
+		}
+	}
+
+	public static class TestMapGraph {
+		public Map<String, String> map = new HashMap<String, String>();
+		public ObjectMap<String, String> objectMap = new ObjectMap<String, String>();
+		public ArrayMap<String, String> arrayMap = new ArrayMap<String, String>();
+
+		public TestMapGraph () {
+			map.put("a", "b");
+			map.put("c", "d");
+			objectMap.put("a", "b");
+			objectMap.put("c", "d");
+			arrayMap.put("a", "b");
+			arrayMap.put("c", "d");
 		}
 	}
 

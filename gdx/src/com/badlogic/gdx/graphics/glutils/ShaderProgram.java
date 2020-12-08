@@ -39,20 +39,16 @@ import com.badlogic.gdx.utils.ObjectIntMap;
 import com.badlogic.gdx.utils.ObjectMap;
 
 /** <p>
- * A shader program encapsulates a vertex and fragment shader pair linked to form a shader program useable with OpenGL ES 2.0.
+ * A shader program encapsulates a vertex and fragment shader pair linked to form a shader program.
  * </p>
  * 
  * <p>
  * After construction a ShaderProgram can be used to draw {@link Mesh}. To make the GPU use a specific ShaderProgram the programs
- * {@link ShaderProgram#begin()} method must be used which effectively binds the program.
+ * {@link ShaderProgram#bind()} method must be used which effectively binds the program.
  * </p>
  * 
  * <p>
  * When a ShaderProgram is bound one can set uniforms, vertex attributes and attributes as needed via the respective methods.
- * </p>
- * 
- * <p>
- * A ShaderProgram can be unbound with a call to {@link ShaderProgram#end()}
  * </p>
  * 
  * <p>
@@ -79,9 +75,19 @@ public class ShaderProgram implements Disposable {
 	public static final String TANGENT_ATTRIBUTE = "a_tangent";
 	/** default name for binormal attribute **/
 	public static final String BINORMAL_ATTRIBUTE = "a_binormal";
+	/** default name for boneweight attribute **/
+	public static final String BONEWEIGHT_ATTRIBUTE = "a_boneWeight";
 
 	/** flag indicating whether attributes & uniforms must be present at all times **/
 	public static boolean pedantic = true;
+
+	/** code that is always added to the vertex shader code, typically used to inject a #version line. Note that this is added
+	 * as-is, you should include a newline (`\n`) if needed. */
+	public static String prependVertexCode = "";
+
+	/** code that is always added to every fragment shader code, typically used to inject a #version line. Note that this is added
+	 * as-is, you should include a newline (`\n`) if needed. */
+	public static String prependFragmentCode = "";
 
 	/** the list of currently available shaders **/
 	private final static ObjectMap<Application, Array<ShaderProgram>> shaders = new ObjectMap<Application, Array<ShaderProgram>>();
@@ -149,6 +155,11 @@ public class ShaderProgram implements Disposable {
 		if (vertexShader == null) throw new IllegalArgumentException("vertex shader must not be null");
 		if (fragmentShader == null) throw new IllegalArgumentException("fragment shader must not be null");
 
+		if (prependVertexCode != null && prependVertexCode.length() > 0)
+			vertexShader = prependVertexCode + vertexShader;
+		if (prependFragmentCode != null && prependFragmentCode.length() > 0)
+			fragmentShader = prependFragmentCode + fragmentShader;
+
 		this.vertexShaderSource = vertexShader;
 		this.fragmentShaderSource = fragmentShader;
 		this.matrix = BufferUtils.newFloatBuffer(16);
@@ -178,7 +189,7 @@ public class ShaderProgram implements Disposable {
 			return;
 		}
 
-		program = linkProgram();
+		program = linkProgram(createProgram());
 		if (program == -1) {
 			isCompiled = false;
 			return;
@@ -204,6 +215,7 @@ public class ShaderProgram implements Disposable {
 // int infoLogLength = intbuf.get(0);
 // if (infoLogLength > 1) {
 			String infoLog = gl.glGetShaderInfoLog(shader);
+			log += type == GL20.GL_VERTEX_SHADER ? "Vertex shader\n" : "Fragment shader:\n";
 			log += infoLog;
 // }
 			return -1;
@@ -212,10 +224,15 @@ public class ShaderProgram implements Disposable {
 		return shader;
 	}
 
-	private int linkProgram () {
+	protected int createProgram () {
 		GL20 gl = Gdx.gl20;
 		int program = gl.glCreateProgram();
-		if (program == 0) return -1;
+		return program != 0 ? program : -1;
+	}
+
+	private int linkProgram (int program) {
+		GL20 gl = Gdx.gl20;
+		if (program == -1) return -1;
 
 		gl.glAttachShader(program, vertexShaderHandle);
 		gl.glAttachShader(program, fragmentShaderHandle);
@@ -278,13 +295,15 @@ public class ShaderProgram implements Disposable {
 	}
 
 	public int fetchUniformLocation (String name, boolean pedantic) {
-		GL20 gl = Gdx.gl20;
 		// -2 == not yet cached
 		// -1 == cached but not found
 		int location;
 		if ((location = uniforms.get(name, -2)) == -2) {
-			location = gl.glGetUniformLocation(program, name);
-			if (location == -1 && pedantic) throw new IllegalArgumentException("no uniform with name '" + name + "' in shader");
+			location = Gdx.gl20.glGetUniformLocation(program, name);
+			if (location == -1 && pedantic) {
+				if (isCompiled) throw new IllegalArgumentException("No uniform with name '" + name + "' in shader");
+				throw new IllegalStateException("An attempted fetch uniform from uncompiled shader \n" + getLog());
+			}
 			uniforms.put(name, location);
 		}
 		return location;
@@ -504,7 +523,7 @@ public class ShaderProgram implements Disposable {
 	 * @param matrix the matrix
 	 * @param transpose whether the matrix should be transposed */
 	public void setUniformMatrix (String name, Matrix4 matrix, boolean transpose) {
-		setUniformMatrix(fetchUniformLocation(name), matrix, transpose); 
+		setUniformMatrix(fetchUniformLocation(name), matrix, transpose);
 	}
 
 	public void setUniformMatrix (int location, Matrix4 matrix) {
@@ -662,19 +681,21 @@ public class ShaderProgram implements Disposable {
 		gl.glVertexAttribPointer(location, size, type, normalize, stride, offset);
 	}
 
-	/** Makes OpenGL ES 2.0 use this vertex and fragment shader pair. When you are done with this shader you have to call
-	 * {@link ShaderProgram#end()}. */
+	/** @deprecated use {@link #bind()} instead, this method will be remove in future version */
+	@Deprecated
 	public void begin () {
+		bind();
+	}
+
+	public void bind(){
 		GL20 gl = Gdx.gl20;
 		checkManaged();
 		gl.glUseProgram(program);
 	}
 
-	/** Disables this shader. Must be called when one is done with the shader. Don't mix it with dispose, that will release the
-	 * shader resources. */
+	/** @deprecated no longer necessary, this method will be remove in future version */
+	@Deprecated
 	public void end () {
-		GL20 gl = Gdx.gl20;
-		gl.glUseProgram(0);
 	}
 
 	/** Disposes all resources associated with this shader. Must be called when the shader is no longer used. */
@@ -763,6 +784,11 @@ public class ShaderProgram implements Disposable {
 		}
 		builder.append("}");
 		return builder.toString();
+	}
+
+	/** @return the number of managed shader programs currently loaded */
+	public static int getNumManagedShaderPrograms () {
+		return shaders.get(Gdx.app).size;
 	}
 
 	/** Sets the given attribute
@@ -887,5 +913,10 @@ public class ShaderProgram implements Disposable {
 	/** @return the source of the fragment shader */
 	public String getFragmentShaderSource () {
 		return fragmentShaderSource;
+	}
+
+	/** @return the handle of the shader program */
+	public int getHandle () {
+		return program;
 	}
 }

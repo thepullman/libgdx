@@ -28,6 +28,7 @@ import com.badlogic.gdx.graphics.g3d.utils.RenderableSorter;
 import com.badlogic.gdx.graphics.g3d.utils.ShaderProvider;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
+import com.badlogic.gdx.utils.FlushablePool;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.badlogic.gdx.utils.Pool;
 
@@ -41,9 +42,7 @@ import com.badlogic.gdx.utils.Pool;
  * 
  * @author xoppa, badlogic */
 public class ModelBatch implements Disposable {
-	protected static class RenderablePool extends Pool<Renderable> {
-		protected Array<Renderable> obtained = new Array<Renderable>();
-
+	protected static class RenderablePool extends FlushablePool<Renderable> {
 		@Override
 		protected Renderable newObject () {
 			return new Renderable();
@@ -54,15 +53,10 @@ public class ModelBatch implements Disposable {
 			Renderable renderable = super.obtain();
 			renderable.environment = null;
 			renderable.material = null;
-			renderable.mesh = null;
+			renderable.meshPart.set("", null, 0, 0, 0);
 			renderable.shader = null;
-			obtained.add(renderable);
+			renderable.userData = null;
 			return renderable;
-		}
-
-		public void flush () {
-			super.freeAll(obtained);
-			obtained.clear();
 		}
 	}
 
@@ -85,7 +79,7 @@ public class ModelBatch implements Disposable {
 	public ModelBatch (final RenderContext context, final ShaderProvider shaderProvider, final RenderableSorter sorter) {
 		this.sorter = (sorter == null) ? new DefaultRenderableSorter() : sorter;
 		this.ownContext = (context == null);
-		this.context = (context == null) ? new RenderContext(new DefaultTextureBinder(DefaultTextureBinder.WEIGHTED, 1)) : context;
+		this.context = (context == null) ? new RenderContext(new DefaultTextureBinder(DefaultTextureBinder.LRU, 1)) : context;
 		this.shaderProvider = (shaderProvider == null) ? new DefaultShaderProvider() : shaderProvider;
 	}
 
@@ -231,7 +225,6 @@ public class ModelBatch implements Disposable {
 	 * @param renderable The {@link Renderable} to be added. */
 	public void render (final Renderable renderable) {
 		renderable.shader = shaderProvider.getShader(renderable);
-		renderable.mesh.setAutoBind(false);
 		renderables.add(renderable);
 	}
 

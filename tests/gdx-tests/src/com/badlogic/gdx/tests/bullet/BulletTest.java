@@ -70,7 +70,7 @@ public class BulletTest implements ApplicationListener, InputProcessor, GestureL
 	}
 
 	@Override
-	public boolean scrolled (int amount) {
+	public boolean scrolled (float amountX, float amountY) {
 		return false;
 	}
 
@@ -136,5 +136,9 @@ public class BulletTest implements ApplicationListener, InputProcessor, GestureL
 	@Override
 	public boolean pinch (Vector2 initialPointer1, Vector2 initialPointer2, Vector2 pointer1, Vector2 pointer2) {
 		return false;
+	}
+
+	@Override
+	public void pinchStop () {
 	}
 }

@@ -121,7 +121,7 @@ public class Box2DTestCollection extends GdxTest implements InputProcessor, Gest
 	}
 
 	@Override
-	public boolean scrolled (int amount) {
+	public boolean scrolled (float amountX, float amountY) {
 		return false;
 	}
 
@@ -170,5 +170,9 @@ public class Box2DTestCollection extends GdxTest implements InputProcessor, Gest
 	@Override
 	public boolean pinch (Vector2 initialFirstPointer, Vector2 initialSecondPointer, Vector2 firstPointer, Vector2 secondPointer) {
 		return false;
+	}
+
+	@Override
+	public void pinchStop () {
 	}
 }
