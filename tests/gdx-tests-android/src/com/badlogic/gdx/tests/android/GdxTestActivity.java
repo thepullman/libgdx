@@ -32,10 +32,13 @@ public class GdxTestActivity extends AndroidApplication {
 		Bundle extras = getIntent().getExtras();
 		String testName = (String)extras.get("test");
 		GdxTest test = GdxTests.newTest(testName);
-		
+
 		// and run the application...
 		AndroidApplicationConfiguration config = new AndroidApplicationConfiguration();
 		config.useImmersiveMode = true;
+		config.useRotationVectorSensor = true;
+		config.useGyroscope = true;
+		config.renderUnderCutout = true;
 		initialize(test, config);
 	}
 }

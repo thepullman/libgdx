@@ -44,6 +44,7 @@ import com.badlogic.gdx.physics.box2d.joints.WheelJoint;
 import com.badlogic.gdx.physics.box2d.joints.WheelJointDef;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
+import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.badlogic.gdx.utils.LongMap;
 import com.badlogic.gdx.utils.Pool;
 import com.badlogic.gdx.utils.SharedLibraryLoader;
@@ -58,6 +59,7 @@ public final class World implements Disposable {
 
 static jclass worldClass = 0;
 static jmethodID shouldCollideID = 0;
+static jmethodID useDefaultContactFilterID = 0;
 static jmethodID beginContactID = 0;
 static jmethodID endContactID = 0;
 static jmethodID preSolveID = 0;
@@ -90,17 +92,22 @@ class CustomContactFilter: public b2ContactFilter
 private:
 	JNIEnv* env;
 	jobject obj;
+	jboolean useDefaultContactFilter;
 
 public:
 	CustomContactFilter( JNIEnv* env, jobject obj )
 	{
 		this->env = env;
 		this->obj = obj;
+		if( useDefaultContactFilterID != 0 )
+			useDefaultContactFilter = env->CallBooleanMethod( obj, useDefaultContactFilterID );
 	}
 
 	virtual bool ShouldCollide(b2Fixture* fixtureA, b2Fixture* fixtureB)
 	{
-		if( shouldCollideID != 0 )
+		if( useDefaultContactFilter == JNI_TRUE )
+			return b2ContactFilter::ShouldCollide( fixtureA, fixtureB );
+		else if( shouldCollideID != 0 )
 			return env->CallBooleanMethod( obj, shouldCollideID, (jlong)fixtureA, (jlong)fixtureB );
 		else
 			return true;
@@ -245,6 +252,7 @@ b2ContactFilter defaultFilter;
 			reportFixtureID = env->GetMethodID(worldClass, "reportFixture", "(J)Z" );
 			reportRayFixtureID = env->GetMethodID(worldClass, "reportRayFixture", "(JFFFFF)F" );
 			shouldCollideID = env->GetMethodID( worldClass, "contactFilter", "(JJ)Z");
+			useDefaultContactFilterID = env->GetMethodID( worldClass, "getUseDefaultContactFilter", "()Z" );
 		}
 	
 		b2World* world = new b2World( b2Vec2( gravityX, gravityY ));
@@ -263,11 +271,19 @@ b2ContactFilter defaultFilter;
 		this.contactFilter = filter;
 		setUseDefaultContactFilter(filter == null);
 	}
+
+	private boolean useDefaultContactFilter;
+
+	/** Internal method called from JNI
+	 * @return whether the native default ContactFilter should be used */
+	private boolean getUseDefaultContactFilter() {
+		return useDefaultContactFilter;
+	}
 	
-	/** tells the native code not to call the Java world class if use is false **/
-	private native void setUseDefaultContactFilter(boolean use); /*
-		// FIXME
-	*/
+	/** Sets flag to tell the native code not to call the Java World class if use is true **/
+	private void setUseDefaultContactFilter(boolean use) {
+		useDefaultContactFilter = use;
+	}
 
 	/** Register a contact event listener. The listener is owned by you and must remain in scope. */
 	public void setContactListener (ContactListener listener) {
@@ -325,8 +341,12 @@ b2ContactFilter defaultFilter;
 		this.bodies.remove(body.addr);
 		Array<Fixture> fixtureList = body.getFixtureList();
 		while(fixtureList.size > 0) {
-			this.fixtures.remove(fixtureList.removeIndex(0).addr).setUserData(null);
-		}
+			Fixture fixtureToDelete = fixtureList.removeIndex(0);
+			fixtureToDelete.setUserData(null);
+ 			this.fixtures.remove(fixtureToDelete.addr);
+ 			freeFixtures.free(fixtureToDelete);
+ 		}
+		
 		freeBodies.free(body);
 	}
 
@@ -399,7 +419,8 @@ b2ContactFilter defaultFilter;
 		if (def.type == JointType.RopeJoint) joint = new RopeJoint(this, jointAddr);
 		if (def.type == JointType.WeldJoint) joint = new WeldJoint(this, jointAddr);
 		if (def.type == JointType.WheelJoint) joint = new WheelJoint(this, jointAddr);
-		if (joint != null) joints.put(joint.addr, joint);
+		if (joint == null) throw new GdxRuntimeException("Unknown joint type: " + def.type); 
+		joints.put(joint.addr, joint);
 		JointEdge jointEdgeA = new JointEdge(def.bodyB, joint);
 		JointEdge jointEdgeB = new JointEdge(def.bodyA, joint);
 		joint.jointEdgeA = jointEdgeA;
@@ -978,25 +999,33 @@ b2ContactFilter defaultFilter;
 	private final ContactImpulse impulse = new ContactImpulse(this, 0);
 
 	private void beginContact (long contactAddr) {
-		contact.addr = contactAddr;
-		if (contactListener != null) contactListener.beginContact(contact);
+		if (contactListener != null) {
+			contact.addr = contactAddr;
+			contactListener.beginContact(contact);
+		}
 	}
 
 	private void endContact (long contactAddr) {
-		contact.addr = contactAddr;
-		if (contactListener != null) contactListener.endContact(contact);
+		if (contactListener != null) {
+			contact.addr = contactAddr;
+			contactListener.endContact(contact);
+		}
 	}
 
 	private void preSolve (long contactAddr, long manifoldAddr) {
-		contact.addr = contactAddr;
-		manifold.addr = manifoldAddr;
-		if (contactListener != null) contactListener.preSolve(contact, manifold);
+		if (contactListener != null) {
+			contact.addr = contactAddr;
+			manifold.addr = manifoldAddr;
+			contactListener.preSolve(contact, manifold);
+		}
 	}
 
 	private void postSolve (long contactAddr, long impulseAddr) {
-		contact.addr = contactAddr;
-		impulse.addr = impulseAddr;
-		if (contactListener != null) contactListener.postSolve(contact, impulse);
+		if (contactListener != null) {
+			contact.addr = contactAddr;
+			impulse.addr = impulseAddr;
+			contactListener.postSolve(contact, impulse);
+		}
 	}
 
 	private boolean reportFixture (long addr) {
@@ -1022,8 +1051,18 @@ b2ContactFilter defaultFilter;
 	 * @param point1 the ray starting point
 	 * @param point2 the ray ending point */
 	public void rayCast (RayCastCallback callback, Vector2 point1, Vector2 point2) {
+		rayCast(callback, point1.x, point1.y, point2.x, point2.y);
+	}
+
+	/** Ray-cast the world for all fixtures in the path of the ray. The ray-cast ignores shapes that contain the starting point.
+	 * @param callback a user implemented callback class.
+	 * @param point1X the ray starting point X
+	 * @param point1Y the ray starting point Y
+	 * @param point2X the ray ending point X
+	 * @param point2Y the ray ending point Y */
+	public void rayCast (RayCastCallback callback, float point1X, float point1Y, float point2X, float point2Y) {
 		rayCastCallback = callback;
-		jniRayCast(addr, point1.x, point1.y, point2.x, point2.y);
+		jniRayCast(addr, point1X, point1Y, point2X, point2Y);
 	}
 
 	private RayCastCallback rayCastCallback = null;

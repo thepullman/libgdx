@@ -34,6 +34,13 @@ public class MusicLoader extends AsynchronousAssetLoader<Music, MusicLoader.Musi
 		super(resolver);
 	}
 
+	/** Returns the {@link Music} instance currently loaded by this {@link MusicLoader}.
+	 * 
+	 * @return the currently loaded {@link Music}, otherwise {@code null} if no {@link Music} has been loaded yet. */
+	protected Music getLoadedMusic () {
+		return music;
+	}
+
 	@Override
 	public void loadAsync (AssetManager manager, String fileName, FileHandle file, MusicParameter parameter) {
 		music = Gdx.audio.newMusic(file);

@@ -82,9 +82,8 @@ public abstract class ModelLoader<P extends ModelLoader.ModelParameters> extends
 			items.add(item);
 		}
 
-		TextureLoader.TextureParameter textureParameter = (parameters != null)
-				? parameters.textureParameter
-				: defaultParameters.textureParameter;
+		TextureLoader.TextureParameter textureParameter = (parameters != null) ? parameters.textureParameter
+			: defaultParameters.textureParameter;
 
 		for (final ModelMaterial modelMaterial : data.materials) {
 			if (modelMaterial.textures != null) {
@@ -121,14 +120,13 @@ public abstract class ModelLoader<P extends ModelLoader.ModelParameters> extends
 				disposables.remove();
 			}
 		}
-		data = null;
 		return result;
 	}
 
 	static public class ModelParameters extends AssetLoaderParameters<Model> {
 		public TextureLoader.TextureParameter textureParameter;
 
-		public ModelParameters() {
+		public ModelParameters () {
 			textureParameter = new TextureLoader.TextureParameter();
 			textureParameter.minFilter = textureParameter.magFilter = Texture.TextureFilter.Linear;
 			textureParameter.wrapU = textureParameter.wrapV = Texture.TextureWrap.Repeat;

@@ -32,7 +32,6 @@ import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.physics.bullet.collision.Collision;
 import com.badlogic.gdx.physics.bullet.collision.btBoxShape;
 import com.badlogic.gdx.physics.bullet.dynamics.btDefaultVehicleRaycaster;
-import com.badlogic.gdx.physics.bullet.dynamics.btDiscreteDynamicsWorld;
 import com.badlogic.gdx.physics.bullet.dynamics.btDynamicsWorld;
 import com.badlogic.gdx.physics.bullet.dynamics.btRaycastVehicle;
 import com.badlogic.gdx.physics.bullet.dynamics.btRigidBody;
@@ -54,6 +53,10 @@ public class VehicleTest extends BaseBulletTest {
 	boolean rightPressed;
 	Vector3 tmpV = new Vector3();
 
+	protected btVehicleRaycaster getRaycaster () {
+		return new btDefaultVehicleRaycaster((btDynamicsWorld)world.collisionWorld);
+	}
+
 	@Override
 	public void create () {
 		super.create();
@@ -69,12 +72,10 @@ public class VehicleTest extends BaseBulletTest {
 		wheelModel.materials.get(0).set(ColorAttribute.createDiffuse(Color.BLACK), ColorAttribute.createSpecular(Color.WHITE),
 			FloatAttribute.createShininess(128));
 		Texture checkboard = new Texture(Gdx.files.internal("data/g3d/checkboard.png"));
-		final Model largeGroundModel = modelBuilder.createBox(
-			1000f,
-			2f,
-			1000f,
-			new Material(TextureAttribute.createDiffuse(checkboard), ColorAttribute.createSpecular(Color.WHITE), FloatAttribute
-				.createShininess(16f)), Usage.Position | Usage.Normal | Usage.TextureCoordinates);
+		final Model largeGroundModel = modelBuilder.createBox(200f, 2f, 200f,
+			new Material(TextureAttribute.createDiffuse(checkboard), ColorAttribute.createSpecular(Color.WHITE),
+				FloatAttribute.createShininess(16f)),
+			Usage.Position | Usage.Normal | Usage.TextureCoordinates);
 		largeGroundModel.manageDisposable(checkboard);
 		disposables.add(largeGroundModel);
 		world.addConstructor("largeground", new BulletConstructor(largeGroundModel, 0f));
@@ -86,7 +87,8 @@ public class VehicleTest extends BaseBulletTest {
 		world.addConstructor("chassis", new BulletConstructor(chassisModel, 5f, new btBoxShape(chassisHalfExtents)));
 		world.addConstructor("wheel", new BulletConstructor(wheelModel, 0, null));
 
-		world.add("largeground", 0, -1f, 0f);
+		for (int i = 0; i < 1000; i += 200)
+			world.add("largeground", 0f, -1f, i);
 
 		chassis = world.add("chassis", 0, 3f, 0);
 		wheels[0] = world.add("wheel", 0, 0, 0);
@@ -95,7 +97,7 @@ public class VehicleTest extends BaseBulletTest {
 		wheels[3] = world.add("wheel", 0, 0, 0);
 
 		// Create the vehicle
-		raycaster = new btDefaultVehicleRaycaster((btDynamicsWorld)world.collisionWorld);
+		raycaster = getRaycaster();
 		tuning = new btVehicleTuning();
 		vehicle = new btRaycastVehicle(tuning, (btRigidBody)chassis.body, raycaster);
 		chassis.body.setActivationState(Collision.DISABLE_DEACTIVATION);

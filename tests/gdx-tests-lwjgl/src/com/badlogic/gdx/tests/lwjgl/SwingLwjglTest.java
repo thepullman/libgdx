@@ -28,7 +28,6 @@ import com.badlogic.gdx.backends.lwjgl.LwjglAWTCanvas;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.tests.AnimationTest;
 import com.badlogic.gdx.tests.MusicTest;
 import com.badlogic.gdx.tests.UITest;
 
@@ -90,7 +89,7 @@ public class SwingLwjglTest extends JFrame {
 
 		private void createWindow () {
 			JFrame window = new JFrame();
-			LwjglAWTCanvas canvas = new LwjglAWTCanvas(new AnimationTest(), canvas1);
+			LwjglAWTCanvas canvas = new LwjglAWTCanvas(new UITest(), canvas1);
 			window.getContentPane().add(canvas.getCanvas(), BorderLayout.CENTER);
 			window.pack();
 			window.setVisible(true);
@@ -108,7 +107,7 @@ public class SwingLwjglTest extends JFrame {
 	}
 
 	@Override
-	public void dispose() {
+	public void dispose () {
 		canvas3.stop();
 		canvas2.stop();
 		canvas1.stop();

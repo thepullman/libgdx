@@ -80,8 +80,87 @@ public class BooleanArray {
 		items[size++] = value;
 	}
 
+	public void add (boolean value1, boolean value2) {
+		boolean[] items = this.items;
+		if (size + 1 >= items.length) items = resize(Math.max(8, (int)(size * 1.75f)));
+		items[size] = value1;
+		items[size + 1] = value2;
+		size += 2;
+	}
+
+	public void add (boolean value1, boolean value2, boolean value3) {
+		boolean[] items = this.items;
+		if (size + 2 >= items.length) items = resize(Math.max(8, (int)(size * 1.75f)));
+		items[size] = value1;
+		items[size + 1] = value2;
+		items[size + 2] = value3;
+		size += 3;
+	}
+
+	public void add (boolean value1, boolean value2, boolean value3, boolean value4) {
+		boolean[] items = this.items;
+		if (size + 3 >= items.length) items = resize(Math.max(9, (int)(size * 1.75f)));
+		items[size] = value1;
+		items[size + 1] = value2;
+		items[size + 2] = value3;
+		items[size + 3] = value4;
+		size += 4;
+	}
+
+	public void add (boolean value1, boolean value2, boolean value3, boolean value4, boolean value5) {
+		boolean[] items = this.items;
+		if (size + 4 >= items.length) items = resize(Math.max(11, (int)(size * 1.75f)));
+		items[size] = value1;
+		items[size + 1] = value2;
+		items[size + 2] = value3;
+		items[size + 3] = value4;
+		items[size + 4] = value5;
+		size += 5;
+	}
+
+	public void add (boolean value1, boolean value2, boolean value3, boolean value4, boolean value5, boolean value6) {
+		boolean[] items = this.items;
+		if (size + 5 >= items.length) items = resize(Math.max(13, (int)(size * 1.75f)));
+		items[size] = value1;
+		items[size + 1] = value2;
+		items[size + 2] = value3;
+		items[size + 3] = value4;
+		items[size + 4] = value5;
+		items[size + 5] = value6;
+		size += 6;
+	}
+
+	public void add (boolean value1, boolean value2, boolean value3, boolean value4, boolean value5, boolean value6,
+		boolean value7) {
+		boolean[] items = this.items;
+		if (size + 6 >= items.length) items = resize(Math.max(16, (int)(size * 1.75f)));
+		items[size] = value1;
+		items[size + 1] = value2;
+		items[size + 2] = value3;
+		items[size + 3] = value4;
+		items[size + 4] = value5;
+		items[size + 5] = value6;
+		items[size + 6] = value7;
+		size += 7;
+	}
+
+	public void add (boolean value1, boolean value2, boolean value3, boolean value4, boolean value5, boolean value6,
+		boolean value7, boolean value8) {
+		boolean[] items = this.items;
+		if (size + 7 >= items.length) items = resize(Math.max(18, (int)(size * 1.75f)));
+		items[size] = value1;
+		items[size + 1] = value2;
+		items[size + 2] = value3;
+		items[size + 3] = value4;
+		items[size + 4] = value5;
+		items[size + 5] = value6;
+		items[size + 6] = value7;
+		items[size + 7] = value8;
+		size += 8;
+	}
+
 	public void addAll (BooleanArray array) {
-		addAll(array, 0, array.size);
+		addAll(array.items, 0, array.size);
 	}
 
 	public void addAll (BooleanArray array, int offset, int length) {
@@ -97,7 +176,7 @@ public class BooleanArray {
 	public void addAll (boolean[] array, int offset, int length) {
 		boolean[] items = this.items;
 		int sizeNeeded = size + length;
-		if (sizeNeeded > items.length) items = resize(Math.max(8, (int)(sizeNeeded * 1.75f)));
+		if (sizeNeeded > items.length) items = resize(Math.max(Math.max(8, sizeNeeded), (int)(size * 1.75f)));
 		System.arraycopy(array, offset, items, size, length);
 		size += length;
 	}
@@ -124,6 +203,16 @@ public class BooleanArray {
 		items[index] = value;
 	}
 
+	/** Inserts the specified number of items at the specified index. The new items will have values equal to the values at those
+	 * indices before the insertion. */
+	public void insertRange (int index, int count) {
+		if (index > size) throw new IndexOutOfBoundsException("index can't be > size: " + index + " > " + size);
+		int sizeNeeded = size + count;
+		if (sizeNeeded > items.length) items = resize(Math.max(Math.max(8, sizeNeeded), (int)(size * 1.75f)));
+		System.arraycopy(items, index, items, index + count, size - index);
+		size = sizeNeeded;
+	}
+
 	public void swap (int first, int second) {
 		if (first >= size) throw new IndexOutOfBoundsException("first can't be >= size: " + first + " >= " + size);
 		if (second >= size) throw new IndexOutOfBoundsException("second can't be >= size: " + second + " >= " + size);
@@ -131,6 +220,37 @@ public class BooleanArray {
 		boolean firstValue = items[first];
 		items[first] = items[second];
 		items[second] = firstValue;
+	}
+
+	/** Returns true if the specified value was replaced successfully with the replacement
+	 * @param value the boolean to be replaced
+	 * @param replacement the first value will be replaced by this replacement if found
+	 * @return if value was found and replaced */
+	public boolean replaceFirst (boolean value, boolean replacement) {
+		boolean[] items = this.items;
+		for (int i = 0, n = size; i < n; i++) {
+			if (items[i] == value) {
+				items[i] = replacement;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** Returns the number of replacements done.
+	 * @param value the boolean to be replaced
+	 * @param replacement all occurrences of value will be replaced by this replacement
+	 * @return the number of replacements done */
+	public int replaceAll (boolean value, boolean replacement) {
+		boolean[] items = this.items;
+		int replacements = 0;
+		for (int i = 0, n = size; i < n; i++) {
+			if (items[i] == value) {
+				items[i] = replacement;
+				replacements++;
+			}
+		}
+		return replacements;
 	}
 
 	/** Removes and returns the item at the specified index. */
@@ -148,21 +268,20 @@ public class BooleanArray {
 
 	/** Removes the items between the specified indices, inclusive. */
 	public void removeRange (int start, int end) {
-		if (end >= size) throw new IndexOutOfBoundsException("end can't be >= size: " + end + " >= " + size);
+		int n = size;
+		if (end >= n) throw new IndexOutOfBoundsException("end can't be >= size: " + end + " >= " + size);
 		if (start > end) throw new IndexOutOfBoundsException("start can't be > end: " + start + " > " + end);
-		boolean[] items = this.items;
-		int count = end - start + 1;
+		int count = end - start + 1, lastIndex = n - count;
 		if (ordered)
-			System.arraycopy(items, start + count, items, start, size - (start + count));
+			System.arraycopy(items, start + count, items, start, n - (start + count));
 		else {
-			int lastIndex = this.size - 1;
-			for (int i = 0; i < count; i++)
-				items[start + i] = items[lastIndex - i];
+			int i = Math.max(lastIndex, end + 1);
+			System.arraycopy(items, i, items, start, n - i);
 		}
-		size -= count;
+		size = n - count;
 	}
 
-	/** Removes from this array all of elements contained in the specified array.
+	/** Removes from this array the first instance of each element contained in the specified array.
 	 * @return true if this array was modified. */
 	public boolean removeAll (BooleanArray array) {
 		int size = this.size;
@@ -197,12 +316,22 @@ public class BooleanArray {
 		return items[0];
 	}
 
+	/** Returns true if the array has one or more items. */
+	public boolean notEmpty () {
+		return size > 0;
+	}
+
+	/** Returns true if the array is empty. */
+	public boolean isEmpty () {
+		return size == 0;
+	}
+
 	public void clear () {
 		size = 0;
 	}
 
-	/** Reduces the size of the backing array to the size of the actual items. This is useful to release memory when many items have
-	 * been removed, or if it is known that more items will not be added.
+	/** Reduces the size of the backing array to the size of the actual items. This is useful to release memory when many items
+	 * have been removed, or if it is known that more items will not be added.
 	 * @return {@link #items} */
 	public boolean[] shrink () {
 		if (items.length != size) resize(size);
@@ -213,8 +342,18 @@ public class BooleanArray {
 	 * items to avoid multiple backing array resizes.
 	 * @return {@link #items} */
 	public boolean[] ensureCapacity (int additionalCapacity) {
+		if (additionalCapacity < 0) throw new IllegalArgumentException("additionalCapacity must be >= 0: " + additionalCapacity);
 		int sizeNeeded = size + additionalCapacity;
-		if (sizeNeeded > items.length) resize(Math.max(8, sizeNeeded));
+		if (sizeNeeded > items.length) resize(Math.max(Math.max(8, sizeNeeded), (int)(size * 1.75f)));
+		return items;
+	}
+
+	/** Sets the array size, leaving any values beyond the current size undefined.
+	 * @return {@link #items} */
+	public boolean[] setSize (int newSize) {
+		if (newSize < 0) throw new IllegalArgumentException("newSize must be >= 0: " + newSize);
+		if (newSize > items.length) resize(Math.max(8, newSize));
+		size = newSize;
 		return items;
 	}
 
@@ -249,6 +388,7 @@ public class BooleanArray {
 	/** Reduces the size of the array to the specified size. If the array is already smaller than the specified size, no action is
 	 * taken. */
 	public void truncate (int newSize) {
+		if (newSize < 0) throw new IllegalArgumentException("newSize must be >= 0: " + newSize);
 		if (size > newSize) size = newSize;
 	}
 
@@ -273,6 +413,7 @@ public class BooleanArray {
 		return h;
 	}
 
+	/** Returns false if either array is unordered. */
 	public boolean equals (Object object) {
 		if (object == this) return true;
 		if (!ordered) return false;
@@ -281,8 +422,7 @@ public class BooleanArray {
 		if (!array.ordered) return false;
 		int n = size;
 		if (n != array.size) return false;
-		boolean[] items1 = this.items;
-		boolean[] items2 = array.items;
+		boolean[] items1 = this.items, items2 = array.items;
 		for (int i = 0; i < n; i++)
 			if (items1[i] != items2[i]) return false;
 		return true;

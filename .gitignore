@@ -2,7 +2,11 @@
 *~
 .*.swp
 .DS_STORE
-
+desktop.ini
+robovm-build/
+project.xcworkspace/
+xcuserdata/
+xcode/native/
 .gradle/
 build/
 bin/
@@ -15,8 +19,8 @@ gwt-unitCache/
 war/
 gen/
 gen-external-apklibs/
-armeabi/
 armeabi-v7a/
+arm64-v8a/
 linux32/
 linux64/
 windows32/
@@ -27,18 +31,23 @@ Debug/
 Release/
 x64/
 x86/
+x86_64/
 ipch/
 /dist
 
 *.a
+*.a.tvos
 *.dll
 *.dll.mdb
 *.userprefs
 *.sdf
 *.class
+hs_err_pid*
+Thumbs.db
 
 libgdx-*.zip
 libgdx-*.zip.MD5
+/android-ndk-*
 
 *.iml
 /.idea/
@@ -50,10 +59,29 @@ libgdx-*.zip.MD5
 /extensions/gdx-audio/libs/
 /extensions/gdx-box2d/gdx-box2d/libs/
 /extensions/gdx-bullet/libs/
-/extensions/gdx-controllers/gdx-controllers-desktop/libs/
 /extensions/gdx-freetype/libs/
 /extensions/gdx-image/libs/
-/extensions/gdx-setup/gdx-setup.jar
+/extensions/gdx-lwjgl3-angle/res
+/extensions/gdx-lwjgl3-glfw-awt-macos/res/
 
-#ensure gdx-setup.jar works properly
-!/extensions/gdx-setup/src/com/badlogic/gdx/setup/resources/gwt/war
+#the LWJGL3 libs are pulled via fetch.xml
+/backends/gdx-backend-lwjgl3/libs/lwjgl*.jar
+/backends/gdx-backend-robovm-metalangle/res/META-INF/robovm/ios/libs
+
+#assets generated in tests
+tests/gdx-tests-android/assets/bitmapWrittenFont.fnt
+tests/gdx-tests-android/assets/bitmapWrittenFont.png
+
+#directories created by fetch.xml
+/tests/gdx-tests-android/libs
+/tmp/
+
+#gradle wrapper
+/local.properties
+natives.zip
+
+#Eclipse metadata
+.metadata
+.classpath
+.project
+.settings

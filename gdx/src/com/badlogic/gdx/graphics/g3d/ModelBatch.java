@@ -16,7 +16,6 @@
 
 package com.badlogic.gdx.graphics.g3d;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g3d.shaders.DefaultShader;
@@ -28,6 +27,7 @@ import com.badlogic.gdx.graphics.g3d.utils.RenderableSorter;
 import com.badlogic.gdx.graphics.g3d.utils.ShaderProvider;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
+import com.badlogic.gdx.utils.FlushablePool;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.badlogic.gdx.utils.Pool;
 
@@ -41,9 +41,7 @@ import com.badlogic.gdx.utils.Pool;
  * 
  * @author xoppa, badlogic */
 public class ModelBatch implements Disposable {
-	protected static class RenderablePool extends Pool<Renderable> {
-		protected Array<Renderable> obtained = new Array<Renderable>();
-
+	protected static class RenderablePool extends FlushablePool<Renderable> {
 		@Override
 		protected Renderable newObject () {
 			return new Renderable();
@@ -54,15 +52,10 @@ public class ModelBatch implements Disposable {
 			Renderable renderable = super.obtain();
 			renderable.environment = null;
 			renderable.material = null;
-			renderable.mesh = null;
+			renderable.meshPart.set("", null, 0, 0, 0);
 			renderable.shader = null;
-			obtained.add(renderable);
+			renderable.userData = null;
 			return renderable;
-		}
-
-		public void flush () {
-			super.freeAll(obtained);
-			obtained.clear();
 		}
 	}
 
@@ -78,32 +71,36 @@ public class ModelBatch implements Disposable {
 	/** the {@link RenderableSorter} **/
 	protected final RenderableSorter sorter;
 
-	/** Construct a ModelBatch, using this constructor makes you responsible for calling context.begin() and context.end() yourself.
+	/** Construct a ModelBatch, using this constructor makes you responsible for calling context.begin() and context.end()
+	 * yourself.
 	 * @param context The {@link RenderContext} to use.
 	 * @param shaderProvider The {@link ShaderProvider} to use, will be disposed when this ModelBatch is disposed.
 	 * @param sorter The {@link RenderableSorter} to use. */
 	public ModelBatch (final RenderContext context, final ShaderProvider shaderProvider, final RenderableSorter sorter) {
 		this.sorter = (sorter == null) ? new DefaultRenderableSorter() : sorter;
 		this.ownContext = (context == null);
-		this.context = (context == null) ? new RenderContext(new DefaultTextureBinder(DefaultTextureBinder.WEIGHTED, 1)) : context;
+		this.context = (context == null) ? new RenderContext(new DefaultTextureBinder(DefaultTextureBinder.LRU, 1)) : context;
 		this.shaderProvider = (shaderProvider == null) ? new DefaultShaderProvider() : shaderProvider;
 	}
 
-	/** Construct a ModelBatch, using this constructor makes you responsible for calling context.begin() and context.end() yourself.
+	/** Construct a ModelBatch, using this constructor makes you responsible for calling context.begin() and context.end()
+	 * yourself.
 	 * @param context The {@link RenderContext} to use.
 	 * @param shaderProvider The {@link ShaderProvider} to use, will be disposed when this ModelBatch is disposed. */
 	public ModelBatch (final RenderContext context, final ShaderProvider shaderProvider) {
 		this(context, shaderProvider, null);
 	}
 
-	/** Construct a ModelBatch, using this constructor makes you responsible for calling context.begin() and context.end() yourself.
+	/** Construct a ModelBatch, using this constructor makes you responsible for calling context.begin() and context.end()
+	 * yourself.
 	 * @param context The {@link RenderContext} to use.
 	 * @param sorter The {@link RenderableSorter} to use. */
 	public ModelBatch (final RenderContext context, final RenderableSorter sorter) {
 		this(context, null, sorter);
 	}
 
-	/** Construct a ModelBatch, using this constructor makes you responsible for calling context.begin() and context.end() yourself.
+	/** Construct a ModelBatch, using this constructor makes you responsible for calling context.begin() and context.end()
+	 * yourself.
 	 * @param context The {@link RenderContext} to use. */
 	public ModelBatch (final RenderContext context) {
 		this(context, null, null);
@@ -231,7 +228,6 @@ public class ModelBatch implements Disposable {
 	 * @param renderable The {@link Renderable} to be added. */
 	public void render (final Renderable renderable) {
 		renderable.shader = shaderProvider.getShader(renderable);
-		renderable.mesh.setAutoBind(false);
 		renderables.add(renderable);
 	}
 

@@ -33,7 +33,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.Window;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Scaling;
-import com.badlogic.gdx.utils.StringBuilder;
 import com.badlogic.gdx.utils.viewport.ScalingViewport;
 
 public abstract class BaseG3dHudTest extends BaseG3dTest {
@@ -142,9 +141,9 @@ public abstract class BaseG3dHudTest extends BaseG3dTest {
 	public void render () {
 		transform.idt();
 		if (rotateCheckBox.isChecked())
-			transform.rotate(Vector3.Y, rotation = (rotation + rotationSpeed * Gdx.graphics.getRawDeltaTime()) % 360);
+			transform.rotate(Vector3.Y, rotation = (rotation + rotationSpeed * Gdx.graphics.getDeltaTime()) % 360);
 		if (moveCheckBox.isChecked()) {
-			movement = (movement + moveSpeed * Gdx.graphics.getRawDeltaTime()) % 1f;
+			movement = (movement + moveSpeed * Gdx.graphics.getDeltaTime()) % 1f;
 			final float sm = MathUtils.sin(movement * MathUtils.PI2);
 			final float cm = MathUtils.cos(movement * MathUtils.PI2);
 			transform.trn(0, moveRadius * cm, moveRadius * sm);

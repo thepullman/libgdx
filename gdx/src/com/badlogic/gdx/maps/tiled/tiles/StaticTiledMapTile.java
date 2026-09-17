@@ -17,6 +17,7 @@
 package com.badlogic.gdx.maps.tiled.tiles;
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.maps.MapObjects;
 import com.badlogic.gdx.maps.MapProperties;
 import com.badlogic.gdx.maps.tiled.TiledMapTile;
 
@@ -28,6 +29,8 @@ public class StaticTiledMapTile implements TiledMapTile {
 	private BlendMode blendMode = BlendMode.ALPHA;
 
 	private MapProperties properties;
+
+	private MapObjects objects;
 
 	private TextureRegion textureRegion;
 
@@ -64,12 +67,20 @@ public class StaticTiledMapTile implements TiledMapTile {
 	}
 
 	@Override
+	public MapObjects getObjects () {
+		if (objects == null) {
+			objects = new MapObjects();
+		}
+		return objects;
+	}
+
+	@Override
 	public TextureRegion getTextureRegion () {
 		return textureRegion;
 	}
 
 	@Override
-	public void setTextureRegion(TextureRegion textureRegion) {
+	public void setTextureRegion (TextureRegion textureRegion) {
 		this.textureRegion = textureRegion;
 	}
 
@@ -107,6 +118,7 @@ public class StaticTiledMapTile implements TiledMapTile {
 		if (copy.properties != null) {
 			getProperties().putAll(copy.properties);
 		}
+		this.objects = copy.objects;
 		this.textureRegion = copy.textureRegion;
 		this.id = copy.id;
 	}

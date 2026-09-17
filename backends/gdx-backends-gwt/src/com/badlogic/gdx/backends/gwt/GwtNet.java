@@ -16,6 +16,7 @@
 
 package com.badlogic.gdx.backends.gwt;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,9 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.badlogic.gdx.Net;
-import com.badlogic.gdx.Net.Protocol;
 import com.badlogic.gdx.net.HttpStatus;
-import com.badlogic.gdx.net.NetJavaServerSocketImpl;
 import com.badlogic.gdx.net.ServerSocket;
 import com.badlogic.gdx.net.ServerSocketHints;
 import com.badlogic.gdx.net.Socket;
@@ -37,7 +36,6 @@ import com.google.gwt.http.client.Header;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.RequestCallback;
-import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.Response;
 import com.google.gwt.user.client.Window;
 
@@ -45,6 +43,7 @@ public class GwtNet implements Net {
 
 	ObjectMap<HttpRequest, Request> requests;
 	ObjectMap<HttpRequest, HttpResponseListener> listeners;
+	GwtApplicationConfiguration config;
 
 	private final class HttpClientResponse implements HttpResponse {
 
@@ -58,7 +57,8 @@ public class GwtNet implements Net {
 
 		@Override
 		public byte[] getResult () {
-			return null;
+			throw new GdxRuntimeException("HttpResponse.getResult() is not available on GWT. "
+				+ "Use getResultAsString() if possible, or make use of AssetDownloader class.");
 		}
 
 		@Override
@@ -68,7 +68,8 @@ public class GwtNet implements Net {
 
 		@Override
 		public InputStream getResultAsStream () {
-			return null;
+			throw new GdxRuntimeException("HttpResponse.getResultAsStream() is not available on GWT. "
+				+ "Use getResultAsString() if possible, or make use of AssetDownloader class.");
 		}
 
 		@Override
@@ -101,7 +102,8 @@ public class GwtNet implements Net {
 		}
 	}
 
-	public GwtNet () {
+	public GwtNet (GwtApplicationConfiguration config) {
+		this.config = config;
 		requests = new ObjectMap<HttpRequest, Request>();
 		listeners = new ObjectMap<HttpRequest, HttpResponseListener>();
 	}
@@ -113,17 +115,22 @@ public class GwtNet implements Net {
 			return;
 		}
 
-		final String method = httpRequest.getMethod();		
+		final String method = httpRequest.getMethod();
 		final String value = httpRequest.getContent();
 		final boolean valueInBody = method.equalsIgnoreCase(HttpMethods.POST) || method.equals(HttpMethods.PUT);
-		
+
 		RequestBuilder builder;
-		
+
 		String url = httpRequest.getUrl();
-		if (method.equalsIgnoreCase(HttpMethods.GET)) {
+		if (method.equalsIgnoreCase(HttpMethods.HEAD)) {
 			if (value != null) {
 				url += "?" + value;
-			}			
+			}
+			builder = new RequestBuilder(RequestBuilder.HEAD, url);
+		} else if (method.equalsIgnoreCase(HttpMethods.GET)) {
+			if (value != null) {
+				url += "?" + value;
+			}
 			builder = new RequestBuilder(RequestBuilder.GET, url);
 		} else if (method.equalsIgnoreCase(HttpMethods.POST)) {
 			builder = new RequestBuilder(RequestBuilder.POST, url);
@@ -146,21 +153,27 @@ public class GwtNet implements Net {
 
 		builder.setTimeoutMillis(httpRequest.getTimeOut());
 
+		builder.setIncludeCredentials(httpRequest.getIncludeCredentials());
+
 		try {
 			Request request = builder.sendRequest(valueInBody ? value : null, new RequestCallback() {
 
 				@Override
-				public void onResponseReceived (Request request, Response response) {					
+				public void onResponseReceived (Request request, Response response) {
+					if (response.getStatusCode() > 0) {
 						httpResultListener.handleHttpResponse(new HttpClientResponse(response));
 						requests.remove(httpRequest);
 						listeners.remove(httpRequest);
+					} else {
+						onError(request, new IOException("HTTP request failed"));
+					}
 				}
 
 				@Override
 				public void onError (Request request, Throwable exception) {
-						httpResultListener.failed(exception);
-						requests.remove(httpRequest);
-						listeners.remove(httpRequest);
+					httpResultListener.failed(exception);
+					requests.remove(httpRequest);
+					listeners.remove(httpRequest);
 				}
 			});
 			requests.put(httpRequest, request);
@@ -184,7 +197,12 @@ public class GwtNet implements Net {
 			listeners.remove(httpRequest);
 		}
 	}
-	
+
+	@Override
+	public boolean isHttpRequestPending (HttpRequest httpRequest) {
+		return listeners.get(httpRequest) != null && requests.get(httpRequest) != null;
+	}
+
 	@Override
 	public ServerSocket newServerSocket (Protocol protocol, String hostname, int port, ServerSocketHints hints) {
 		throw new UnsupportedOperationException("Not implemented");
@@ -202,7 +220,12 @@ public class GwtNet implements Net {
 
 	@Override
 	public boolean openURI (String URI) {
-		Window.open(URI, "_blank", null);
+		if (config.openURLInNewWindow) {
+			Window.open(URI, "_blank", null);
+		} else {
+			Window.Location.assign(URI);
+		}
 		return true;
 	}
+
 }

@@ -132,7 +132,8 @@ public class UBJsonWriter implements Closeable {
 		return this;
 	}
 
-	/** Appends a {@code float} value to the stream. This corresponds to the {@code float32} value type in the UBJSON specification.
+	/** Appends a {@code float} value to the stream. This corresponds to the {@code float32} value type in the UBJSON
+	 * specification.
 	 * @return this writer, for chaining */
 	public UBJsonWriter value (float value) throws IOException {
 		checkName();
@@ -170,7 +171,8 @@ public class UBJsonWriter implements Closeable {
 		return this;
 	}
 
-	/** Appends a {@code String} value to the stream. This corresponds to the {@code string} value type in the UBJSON specification.
+	/** Appends a {@code String} value to the stream. This corresponds to the {@code string} value type in the UBJSON
+	 * specification.
 	 * @return this writer, for chaining */
 	public UBJsonWriter value (String value) throws IOException {
 		checkName();
@@ -206,8 +208,8 @@ public class UBJsonWriter implements Closeable {
 		return this;
 	}
 
-	/** Appends an optimized {@code short array} value to the stream. As an optimized array, the {@code int16} value type marker and
-	 * element count are encoded once at the array marker instead of repeating the type marker for each element.
+	/** Appends an optimized {@code short array} value to the stream. As an optimized array, the {@code int16} value type marker
+	 * and element count are encoded once at the array marker instead of repeating the type marker for each element.
 	 * @return this writer, for chaining */
 	public UBJsonWriter value (short[] values) throws IOException {
 		array();
@@ -244,7 +246,7 @@ public class UBJsonWriter implements Closeable {
 	public UBJsonWriter value (long[] values) throws IOException {
 		array();
 		out.writeByte('$');
-		out.writeByte('I');
+		out.writeByte('L');
 		out.writeByte('#');
 		value(values.length);
 		for (int i = 0, n = values.length; i < n; i++) {
@@ -277,7 +279,7 @@ public class UBJsonWriter implements Closeable {
 	public UBJsonWriter value (double[] values) throws IOException {
 		array();
 		out.writeByte('$');
-		out.writeByte('d');
+		out.writeByte('D');
 		out.writeByte('#');
 		value(values.length);
 		for (int i = 0, n = values.length; i < n; i++) {
@@ -304,7 +306,7 @@ public class UBJsonWriter implements Closeable {
 	public UBJsonWriter value (char[] values) throws IOException {
 		array();
 		out.writeByte('$');
-		out.writeByte('I');
+		out.writeByte('C');
 		out.writeByte('#');
 		value(values.length);
 		for (int i = 0, n = values.length; i < n; i++) {

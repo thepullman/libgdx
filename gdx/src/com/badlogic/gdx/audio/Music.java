@@ -22,9 +22,10 @@ import com.badlogic.gdx.Audio;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.utils.Disposable;
 
-/** <p>
- * A Music instance represents a streamed audio file. The interface supports pausing, resuming
- * and so on. When you are done with using the Music instance you have to dispose it via the {@link #dispose()} method.
+/**
+ * <p>
+ * A Music instance represents a streamed audio file. The interface supports pausing, resuming and so on. When you are done with
+ * using the Music instance you have to dispose it via the {@link #dispose()} method.
  * </p>
  * 
  * <p>
@@ -37,7 +38,7 @@ import com.badlogic.gdx.utils.Disposable;
  * </p>
  * 
  * <p>
- * <b>Note<b>: any values provided will not be clamped, it is the developer's responsibility to do so
+ * <b>Note</b>: any values provided will not be clamped, it is the developer's responsibility to do so
  * </p>
  * 
  * @author mzechner */
@@ -78,9 +79,9 @@ public interface Music extends Disposable {
 	 * @param volume the volume in the range [0,1]. */
 	public void setPan (float pan, float volume);
 
-	/** Set the playback position in seconds. */ 
+	/** Set the playback position in seconds. */
 	public void setPosition (float position);
-	
+
 	/** Returns the playback position in seconds. */
 	public float getPosition ();
 

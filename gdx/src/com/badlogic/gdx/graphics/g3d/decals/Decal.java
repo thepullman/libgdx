@@ -24,7 +24,8 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.NumberUtils;
 
-/** <p/>
+/**
+ * <p/>
  * Represents a sprite in 3d space. Typical 3d transformations such as translation, rotation and scaling are supported. The
  * position includes a z component other than setting the depth no manual layering has to be performed, correct overlay is
  * guaranteed by using the depth buffer.
@@ -50,8 +51,8 @@ public class Decal {
 	protected Vector2 scale = new Vector2(1, 1);
 	protected Color color = new Color();
 
-	/** The transformation offset can be used to change the pivot point for rotation and scaling. By default the pivot is the middle
-	 * of the decal. */
+	/** The transformation offset can be used to change the pivot point for rotation and scaling. By default the pivot is the
+	 * middle of the decal. */
 	public Vector2 transformationOffset = null;
 	protected Vector2 dimensions = new Vector2();
 
@@ -92,9 +93,10 @@ public class Decal {
 		vertices[C4] = color;
 	}
 
-	/** @see #setColor(Color) */
-	public void setColor (float color) {
-		this.color.set(NumberUtils.floatToIntColor(color));
+	/** Sets the color of this decal, expanding the alpha from 0-254 to 0-255.
+	 * @see #setColor(Color) */
+	public void setPackedColor (float color) {
+		Color.abgr8888ToColor(this.color, color);
 		vertices[C1] = color;
 		vertices[C2] = color;
 		vertices[C3] = color;
@@ -377,6 +379,7 @@ public class Decal {
 	 * 
 	 * @return vertex array backing the decal */
 	public float[] getVertices () {
+		update();
 		return vertices;
 	}
 
@@ -397,7 +400,8 @@ public class Decal {
 		 * v3.add(position); vertices[xIndex] = v3.x; vertices[yIndex] = v3.y; vertices[zIndex] = v3.z;
 		 * ---------------------------------------------------------------------------------------------------- However, a half ass
 		 * benchmark with dozens of thousands decals showed that doing it "by hand", as done here, is about 10% faster. So while
-		 * duplicate code should be avoided for maintenance reasons etc. the performance gain is worth it. The math doesn't change. */
+		 * duplicate code should be avoided for maintenance reasons etc. the performance gain is worth it. The math doesn't
+		 * change. */
 		float x, y, z, w;
 		float tx, ty;
 		if (transformationOffset != null) {
@@ -567,10 +571,9 @@ public class Decal {
 		return material;
 	}
 
-	/**Set material
+	/** Set material
 	 * 
-	 * @param material custom material
-	 */
+	 * @param material custom material */
 	public void setMaterial (DecalMaterial material) {
 		this.material = material;
 	}
@@ -629,8 +632,8 @@ public class Decal {
 	 * @return Created decal */
 	public static Decal newDecal (TextureRegion textureRegion, boolean hasTransparency) {
 		return newDecal(textureRegion.getRegionWidth(), textureRegion.getRegionHeight(), textureRegion,
-			hasTransparency ? GL20.GL_SRC_ALPHA : DecalMaterial.NO_BLEND, hasTransparency ? GL20.GL_ONE_MINUS_SRC_ALPHA
-				: DecalMaterial.NO_BLEND);
+			hasTransparency ? GL20.GL_SRC_ALPHA : DecalMaterial.NO_BLEND,
+			hasTransparency ? GL20.GL_ONE_MINUS_SRC_ALPHA : DecalMaterial.NO_BLEND);
 	}
 
 	/** Creates a decal using the region for texturing

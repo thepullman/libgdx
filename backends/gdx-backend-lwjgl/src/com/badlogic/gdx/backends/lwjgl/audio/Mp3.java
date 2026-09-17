@@ -36,21 +36,20 @@ public class Mp3 {
 		private OutputBuffer outputBuffer;
 		private MP3Decoder decoder;
 
-		public Music (OpenALAudio audio, FileHandle file) {
+		public Music (OpenALLwjglAudio audio, FileHandle file) {
 			super(audio, file);
 			if (audio.noDevice) return;
 			bitstream = new Bitstream(file.read());
 			decoder = new MP3Decoder();
-			bufferOverhead = 4096;
 			try {
 				Header header = bitstream.readFrame();
 				if (header == null) throw new GdxRuntimeException("Empty MP3");
 				int channels = header.mode() == Header.SINGLE_CHANNEL ? 1 : 2;
 				outputBuffer = new OutputBuffer(channels, false);
 				decoder.setOutputBuffer(outputBuffer);
-				setup(channels, header.getSampleRate());
+				setup(channels, 16, header.getSampleRate());
 			} catch (BitstreamException e) {
-				throw new GdxRuntimeException("error while preloading mp3", e);
+				throw new GdxRuntimeException("Error while preloading MP3", e);
 			}
 		}
 
@@ -71,7 +70,7 @@ public class Mp3 {
 						int channels = header.mode() == Header.SINGLE_CHANNEL ? 1 : 2;
 						outputBuffer = new OutputBuffer(channels, false);
 						decoder.setOutputBuffer(outputBuffer);
-						setup(channels, header.getSampleRate());
+						setup(channels, 16, header.getSampleRate());
 						setup = false;
 					}
 					try {
@@ -105,7 +104,7 @@ public class Mp3 {
 	static public class Sound extends OpenALSound {
 		// Note: This uses a slightly modified version of JLayer.
 
-		public Sound (OpenALAudio audio, FileHandle file) {
+		public Sound (OpenALLwjglAudio audio, FileHandle file) {
 			super(audio);
 			if (audio.noDevice) return;
 			ByteArrayOutputStream output = new ByteArrayOutputStream(4096);
@@ -134,7 +133,7 @@ public class Mp3 {
 					output.write(outputBuffer.getBuffer(), 0, outputBuffer.reset());
 				}
 				bitstream.close();
-				setup(output.toByteArray(), channels, sampleRate);
+				setup(output.toByteArray(), channels, 16, sampleRate);
 			} catch (Throwable ex) {
 				throw new GdxRuntimeException("Error reading audio data.", ex);
 			}

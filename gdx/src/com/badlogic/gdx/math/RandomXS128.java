@@ -20,8 +20,8 @@ import java.util.Random;
 
 /** This class implements the xorshift128+ algorithm that is a very fast, top-quality 64-bit pseudo-random number generator. The
  * quality of this PRNG is much higher than {@link Random}'s, and its cycle length is 2<sup>128</sup>&nbsp;&minus;&nbsp;1, which
- * is more than enough for any single-thread application. More details and algorithms can be found <a
- * href="http://xorshift.di.unimi.it/">here</a>.
+ * is more than enough for any single-thread application. More details and algorithms can be found
+ * <a href="http://xorshift.di.unimi.it/">here</a>.
  * <p>
  * Instances of RandomXS128 are not thread-safe.
  * 
@@ -99,9 +99,9 @@ public class RandomXS128 extends Random {
 		return (int)nextLong(n);
 	}
 
-	/** Returns a pseudo-random, uniformly distributed {@code long} value between 0 (inclusive) and the specified value (exclusive),
-	 * drawn from this random number generator's sequence. The algorithm used to generate the value guarantees that the result is
-	 * uniform, provided that the sequence of 64-bit values produced by this generator is.
+	/** Returns a pseudo-random, uniformly distributed {@code long} value between 0 (inclusive) and the specified value
+	 * (exclusive), drawn from this random number generator's sequence. The algorithm used to generate the value guarantees that
+	 * the result is uniform, provided that the sequence of 64-bit values produced by this generator is.
 	 * <p>
 	 * This implementation uses {@link #nextLong()} internally.
 	 * @param n the positive bound on the random number to be returned.
@@ -115,7 +115,7 @@ public class RandomXS128 extends Random {
 		}
 	}
 
-	/** Returns a pseudo-random, uniformly distributed {@code double} value between 0.0 and 1.0from this random number generator's
+	/** Returns a pseudo-random, uniformly distributed {@code double} value between 0.0 and 1.0 from this random number generator's
 	 * sequence.
 	 * <p>
 	 * This implementation uses {@link #nextLong()} internally. */
@@ -158,7 +158,7 @@ public class RandomXS128 extends Random {
 
 	/** Sets the internal seed of this generator based on the given {@code long} value.
 	 * <p>
-	 * The given seed is passed twice through an hash function. This way, if the user passes a small value we avoid the short
+	 * The given seed is passed twice through a hash function. This way, if the user passes a small value we avoid the short
 	 * irregular transient associated with states having a very small number of bits set.
 	 * @param seed a nonzero seed for this generator (if zero, the generator will be seeded with {@link Long#MIN_VALUE}). */
 	@Override
@@ -174,13 +174,11 @@ public class RandomXS128 extends Random {
 		this.seed0 = seed0;
 		this.seed1 = seed1;
 	}
-	
-	/**
-	 * Returns the internal seeds to allow state saving.
-	 * @param seed muse be 0 or 1, designating which of the 2 long seeds to return
-	 * @return the internal seed that can be used in setState
-	 */
-	public long getState(int seed) {
+
+	/** Returns the internal seeds to allow state saving.
+	 * @param seed must be 0 or 1, designating which of the 2 long seeds to return
+	 * @return the internal seed that can be used in setState */
+	public long getState (int seed) {
 		return seed == 0 ? seed0 : seed1;
 	}
 

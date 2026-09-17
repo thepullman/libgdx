@@ -40,10 +40,10 @@ public class Method {
 	final Parameter[] parameters;
 	final int methodId;
 	final Annotation[] annotations;
-	
-	public Method (String name, Class enclosingType, Class returnType, Parameter[] parameters, boolean isAbstract,
-		boolean isFinal, boolean isStatic, boolean isDefaultAccess, boolean isPrivate, boolean isProtected, boolean isPublic,
-		boolean isNative, boolean isVarArgs, boolean isMethod, boolean isConstructor, int methodId, Annotation[] annotations) {
+
+	public Method (String name, Class enclosingType, Class returnType, Parameter[] parameters, boolean isAbstract, boolean isFinal,
+		boolean isStatic, boolean isDefaultAccess, boolean isPrivate, boolean isProtected, boolean isPublic, boolean isNative,
+		boolean isVarArgs, boolean isMethod, boolean isConstructor, int methodId, Annotation[] annotations) {
 		this.name = name;
 		this.enclosingType = new CachedTypeLookup(enclosingType);
 		this.parameters = parameters != null ? parameters : EMPTY_PARAMS;
@@ -65,12 +65,12 @@ public class Method {
 
 	/** @return the {@link Class} of the enclosing type. */
 	public Class getEnclosingType () {
-		return enclosingType.getClass();
+		return enclosingType.clazz;
 	}
 
 	/** @return the {@link Class} of the return type or null. */
 	public Class getReturnType () {
-		return returnType.getClass();
+		return returnType.clazz;
 	}
 
 	/** @return the list of parameters, can be a zero size array. */
@@ -126,13 +126,13 @@ public class Method {
 	public boolean isConstructor () {
 		return isConstructor;
 	}
-	
+
 	public Annotation[] getDeclaredAnnotations () {
 		return annotations;
 	}
 
-	/** Invokes the method on the given object. Ignores the object if this is a static method. Throws an IllegalArgumentException if
-	 * the parameters do not match.
+	/** Invokes the method on the given object. Ignores the object if this is a static method. Throws an IllegalArgumentException
+	 * if the parameters do not match.
 	 * @param obj the object to invoke the method on or null.
 	 * @param params the parameters to pass to the method or null.
 	 * @return the return value or null if the method does not return anything. */

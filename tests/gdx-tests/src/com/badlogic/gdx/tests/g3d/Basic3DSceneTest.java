@@ -50,7 +50,6 @@ public class Basic3DSceneTest extends GdxTest implements ApplicationListener {
 	public void create () {
 		modelBatch = new ModelBatch();
 		lights = new Environment();
-		lights = new Environment();
 		lights.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1.f));
 		lights.add(new DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f));
 
@@ -101,10 +100,10 @@ public class Basic3DSceneTest extends GdxTest implements ApplicationListener {
 
 	@Override
 	public void render () {
-		if (loading && assets.update()) doneLoading();
+		if (loading && assets.update(16)) doneLoading();
 		camController.update();
 
-		Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		Gdx.gl.glViewport(0, 0, Gdx.graphics.getBackBufferWidth(), Gdx.graphics.getBackBufferHeight());
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
 		modelBatch.begin(cam);

@@ -78,7 +78,7 @@ public class G3dModelLoader extends ModelLoader<ModelLoader.ModelParameters> {
 		return model;
 	}
 
-	private void parseMeshes (ModelData model, JsonValue json) {
+	protected void parseMeshes (ModelData model, JsonValue json) {
 		JsonValue meshes = json.get("meshes");
 		if (meshes != null) {
 
@@ -117,13 +117,13 @@ public class G3dModelLoader extends ModelLoader<ModelLoader.ModelParameters> {
 					jsonPart.indices = meshPart.require("indices").asShortArray();
 					parts.add(jsonPart);
 				}
-				jsonMesh.parts = parts.toArray(ModelMeshPart.class);
+				jsonMesh.parts = parts.toArray(ModelMeshPart[]::new);
 				model.meshes.add(jsonMesh);
 			}
 		}
 	}
 
-	private int parseType (String type) {
+	protected int parseType (String type) {
 		if (type.equals("TRIANGLES")) {
 			return GL20.GL_TRIANGLES;
 		} else if (type.equals("LINES")) {
@@ -135,12 +135,12 @@ public class G3dModelLoader extends ModelLoader<ModelLoader.ModelParameters> {
 		} else if (type.equals("LINE_STRIP")) {
 			return GL20.GL_LINE_STRIP;
 		} else {
-			throw new GdxRuntimeException("Unknown primitive type '" + type
-				+ "', should be one of triangle, trianglestrip, line, linestrip, lineloop or point");
+			throw new GdxRuntimeException(
+				"Unknown primitive type '" + type + "', should be one of triangle, trianglestrip, line, linestrip or point");
 		}
 	}
 
-	private VertexAttribute[] parseAttributes (JsonValue attributes) {
+	protected VertexAttribute[] parseAttributes (JsonValue attributes) {
 		Array<VertexAttribute> vertexAttributes = new Array<VertexAttribute>();
 		int unit = 0;
 		int blendWeightCount = 0;
@@ -164,14 +164,14 @@ public class G3dModelLoader extends ModelLoader<ModelLoader.ModelParameters> {
 			} else if (attr.startsWith("BLENDWEIGHT")) {
 				vertexAttributes.add(VertexAttribute.BoneWeight(blendWeightCount++));
 			} else {
-				throw new GdxRuntimeException("Unknown vertex attribute '" + attr
-					+ "', should be one of position, normal, uv, tangent or binormal");
+				throw new GdxRuntimeException(
+					"Unknown vertex attribute '" + attr + "', should be one of position, normal, uv, tangent or binormal");
 			}
 		}
-		return vertexAttributes.toArray(VertexAttribute.class);
+		return vertexAttributes.toArray(VertexAttribute[]::new);
 	}
 
-	private void parseMaterials (ModelData model, JsonValue json, String materialDir) {
+	protected void parseMaterials (ModelData model, JsonValue json, String materialDir) {
 		JsonValue materials = json.get("materials");
 		if (materials == null) {
 			// we should probably create some default material in this case
@@ -234,7 +234,7 @@ public class G3dModelLoader extends ModelLoader<ModelLoader.ModelParameters> {
 		}
 	}
 
-	private int parseTextureUsage (final String value) {
+	protected int parseTextureUsage (final String value) {
 		if (value.equalsIgnoreCase("AMBIENT"))
 			return ModelTexture.USAGE_AMBIENT;
 		else if (value.equalsIgnoreCase("BUMP"))
@@ -257,14 +257,14 @@ public class G3dModelLoader extends ModelLoader<ModelLoader.ModelParameters> {
 		return ModelTexture.USAGE_UNKNOWN;
 	}
 
-	private Color parseColor (JsonValue colorArray) {
+	protected Color parseColor (JsonValue colorArray) {
 		if (colorArray.size >= 3)
 			return new Color(colorArray.getFloat(0), colorArray.getFloat(1), colorArray.getFloat(2), 1.0f);
 		else
 			throw new GdxRuntimeException("Expected Color values <> than three.");
 	}
 
-	private Vector2 readVector2 (JsonValue vectorArray, float x, float y) {
+	protected Vector2 readVector2 (JsonValue vectorArray, float x, float y) {
 		if (vectorArray == null)
 			return new Vector2(x, y);
 		else if (vectorArray.size == 2)
@@ -273,7 +273,7 @@ public class G3dModelLoader extends ModelLoader<ModelLoader.ModelParameters> {
 			throw new GdxRuntimeException("Expected Vector2 values <> than two.");
 	}
 
-	private Array<ModelNode> parseNodes (ModelData model, JsonValue json) {
+	protected Array<ModelNode> parseNodes (ModelData model, JsonValue json) {
 		JsonValue nodes = json.get("nodes");
 		if (nodes != null) {
 			model.nodes.ensureCapacity(nodes.size);
@@ -285,9 +285,9 @@ public class G3dModelLoader extends ModelLoader<ModelLoader.ModelParameters> {
 		return model.nodes;
 	}
 
-	private final Quaternion tempQ = new Quaternion();
+	protected final Quaternion tempQ = new Quaternion();
 
-	private ModelNode parseNodesRecursively (JsonValue json) {
+	protected ModelNode parseNodesRecursively (JsonValue json) {
 		ModelNode jsonNode = new ModelNode();
 
 		String id = json.getString("id", null);
@@ -296,13 +296,13 @@ public class G3dModelLoader extends ModelLoader<ModelLoader.ModelParameters> {
 
 		JsonValue translation = json.get("translation");
 		if (translation != null && translation.size != 3) throw new GdxRuntimeException("Node translation incomplete");
-		jsonNode.translation = translation == null ? null : new Vector3(translation.getFloat(0), translation.getFloat(1),
-			translation.getFloat(2));
+		jsonNode.translation = translation == null ? null
+			: new Vector3(translation.getFloat(0), translation.getFloat(1), translation.getFloat(2));
 
 		JsonValue rotation = json.get("rotation");
 		if (rotation != null && rotation.size != 4) throw new GdxRuntimeException("Node rotation incomplete");
-		jsonNode.rotation = rotation == null ? null : new Quaternion(rotation.getFloat(0), rotation.getFloat(1),
-			rotation.getFloat(2), rotation.getFloat(3));
+		jsonNode.rotation = rotation == null ? null
+			: new Quaternion(rotation.getFloat(0), rotation.getFloat(1), rotation.getFloat(2), rotation.getFloat(3));
 
 		JsonValue scale = json.get("scale");
 		if (scale != null && scale.size != 3) throw new GdxRuntimeException("Node scale incomplete");
@@ -328,7 +328,7 @@ public class G3dModelLoader extends ModelLoader<ModelLoader.ModelParameters> {
 
 				JsonValue bones = material.get("bones");
 				if (bones != null) {
-					nodePart.bones = new ArrayMap<String, Matrix4>(true, bones.size, String.class, Matrix4.class);
+					nodePart.bones = new ArrayMap<>(true, bones.size, String[]::new, Matrix4[]::new);
 					int j = 0;
 					for (JsonValue bone = bones.child; bone != null; bone = bone.next, j++) {
 						String nodeId = bone.getString("node", null);
@@ -367,7 +367,7 @@ public class G3dModelLoader extends ModelLoader<ModelLoader.ModelParameters> {
 		return jsonNode;
 	}
 
-	private void parseAnimations (ModelData model, JsonValue json) {
+	protected void parseAnimations (ModelData model, JsonValue json) {
 		JsonValue animations = json.get("animations");
 		if (animations == null) return;
 
@@ -390,10 +390,9 @@ public class G3dModelLoader extends ModelLoader<ModelLoader.ModelParameters> {
 				if (keyframes != null && keyframes.isArray()) {
 					for (JsonValue keyframe = keyframes.child; keyframe != null; keyframe = keyframe.next) {
 						final float keytime = keyframe.getFloat("keytime", 0f) / 1000.f;
-						JsonValue translation = keyframe.get("translation"); 
+						JsonValue translation = keyframe.get("translation");
 						if (translation != null && translation.size == 3) {
-							if (nodeAnim.translation == null)
-								nodeAnim.translation = new Array<ModelNodeKeyframe<Vector3>>();
+							if (nodeAnim.translation == null) nodeAnim.translation = new Array<ModelNodeKeyframe<Vector3>>();
 							ModelNodeKeyframe<Vector3> tkf = new ModelNodeKeyframe<Vector3>();
 							tkf.keytime = keytime;
 							tkf.value = new Vector3(translation.getFloat(0), translation.getFloat(1), translation.getFloat(2));
@@ -401,17 +400,16 @@ public class G3dModelLoader extends ModelLoader<ModelLoader.ModelParameters> {
 						}
 						JsonValue rotation = keyframe.get("rotation");
 						if (rotation != null && rotation.size == 4) {
-							if (nodeAnim.rotation == null)
-								nodeAnim.rotation = new Array<ModelNodeKeyframe<Quaternion>>();
+							if (nodeAnim.rotation == null) nodeAnim.rotation = new Array<ModelNodeKeyframe<Quaternion>>();
 							ModelNodeKeyframe<Quaternion> rkf = new ModelNodeKeyframe<Quaternion>();
 							rkf.keytime = keytime;
-							rkf.value = new Quaternion(rotation.getFloat(0), rotation.getFloat(1), rotation.getFloat(2), rotation.getFloat(3));
+							rkf.value = new Quaternion(rotation.getFloat(0), rotation.getFloat(1), rotation.getFloat(2),
+								rotation.getFloat(3));
 							nodeAnim.rotation.add(rkf);
 						}
 						JsonValue scale = keyframe.get("scale");
 						if (scale != null && scale.size == 3) {
-							if (nodeAnim.scaling == null)
-								nodeAnim.scaling = new Array<ModelNodeKeyframe<Vector3>>();
+							if (nodeAnim.scaling == null) nodeAnim.scaling = new Array<ModelNodeKeyframe<Vector3>>();
 							ModelNodeKeyframe<Vector3> skf = new ModelNodeKeyframe();
 							skf.keytime = keytime;
 							skf.value = new Vector3(scale.getFloat(0), scale.getFloat(1), scale.getFloat(2));
@@ -432,8 +430,7 @@ public class G3dModelLoader extends ModelLoader<ModelLoader.ModelParameters> {
 								kf.value = new Vector3(translation.getFloat(0), translation.getFloat(1), translation.getFloat(2));
 						}
 					}
-					
-					
+
 					JsonValue rotationKF = node.get("rotation");
 					if (rotationKF != null && rotationKF.isArray()) {
 						nodeAnim.rotation = new Array<ModelNodeKeyframe<Quaternion>>();
@@ -443,11 +440,11 @@ public class G3dModelLoader extends ModelLoader<ModelLoader.ModelParameters> {
 							nodeAnim.rotation.add(kf);
 							kf.keytime = keyframe.getFloat("keytime", 0f) / 1000.f;
 							JsonValue rotation = keyframe.get("value");
-							if (rotation != null && rotation.size >= 4)
-								kf.value = new Quaternion(rotation.getFloat(0), rotation.getFloat(1), rotation.getFloat(2), rotation.getFloat(3));
+							if (rotation != null && rotation.size >= 4) kf.value = new Quaternion(rotation.getFloat(0),
+								rotation.getFloat(1), rotation.getFloat(2), rotation.getFloat(3));
 						}
 					}
-					
+
 					JsonValue scalingKF = node.get("scaling");
 					if (scalingKF != null && scalingKF.isArray()) {
 						nodeAnim.scaling = new Array<ModelNodeKeyframe<Vector3>>();

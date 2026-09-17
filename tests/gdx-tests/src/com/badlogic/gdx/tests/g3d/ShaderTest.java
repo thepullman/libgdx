@@ -32,21 +32,19 @@ import com.badlogic.gdx.graphics.g3d.Shader;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.model.Node;
 import com.badlogic.gdx.graphics.g3d.shaders.BaseShader;
-import com.badlogic.gdx.graphics.g3d.utils.BaseShaderProvider;
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
 import com.badlogic.gdx.graphics.g3d.utils.DefaultShaderProvider;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.RenderContext;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.tests.utils.GdxTest;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 
 public class ShaderTest extends GdxTest {
-	// Create a custom attribute, see https://github.com/libgdx/libgdx/wiki/Material-and-environment
-	// See also: http://blog.xoppa.com/using-materials-with-libgdx/
+	// Create a custom attribute, see https://libgdx.com/wiki/graphics/3d/material-and-environment
+	// See also: https://xoppa.github.io/blog/using-materials-with-libgdx/
 	public static class TestAttribute extends Attribute {
 		public final static String Alias = "Test";
 		public final static long ID = register(Alias);
@@ -67,7 +65,7 @@ public class ShaderTest extends GdxTest {
 		protected boolean equals (Attribute other) {
 			return ((TestAttribute)other).value == value;
 		}
-		
+
 		@Override
 		public int compareTo (Attribute o) {
 			if (type != o.type) return type < o.type ? -1 : 1;
@@ -76,7 +74,7 @@ public class ShaderTest extends GdxTest {
 		}
 	}
 
-	// Create a custom shader, see also http://blog.xoppa.com/creating-a-shader-with-libgdx
+	// Create a custom shader, see also https://xoppa.github.io/blog/creating-a-shader-with-libgdx/
 	// BaseShader adds some basic functionality used to manage uniforms etc.
 	public static class TestShader extends BaseShader {
 		// @off
@@ -151,7 +149,7 @@ public class ShaderTest extends GdxTest {
 
 		@Override
 		public void begin (Camera camera, RenderContext context) {
-			program.begin();
+			program.bind();
 			context.setDepthTest(GL20.GL_LEQUAL, 0f, 1f);
 			context.setDepthMask(true);
 			set(u_projTrans, camera.combined);
@@ -169,12 +167,7 @@ public class ShaderTest extends GdxTest {
 				set(u_color, colorAttr.color);
 			}
 
-			renderable.mesh.render(program, renderable.primitiveType, renderable.meshPartOffset, renderable.meshPartSize);
-		}
-
-		@Override
-		public void end () {
-			program.end();
+			renderable.meshPart.render(program);
 		}
 
 		@Override
@@ -252,7 +245,7 @@ public class ShaderTest extends GdxTest {
 
 		camController.update();
 
-		Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		Gdx.gl.glViewport(0, 0, Gdx.graphics.getBackBufferWidth(), Gdx.graphics.getBackBufferHeight());
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
 		modelBatch.begin(cam);

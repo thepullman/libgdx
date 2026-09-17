@@ -23,10 +23,11 @@ import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.utils.IntArray;
 
 final class AndroidSound implements Sound {
+	final static int MAX_STREAMS_COUNT = 8;
 	final SoundPool soundPool;
 	final AudioManager manager;
 	final int soundId;
-	final IntArray streamIds = new IntArray(8);
+	final IntArray streamIds = new IntArray(MAX_STREAMS_COUNT);
 
 	AndroidSound (SoundPool pool, AudioManager manager, int soundId) {
 		this.soundPool = pool;
@@ -46,7 +47,7 @@ final class AndroidSound implements Sound {
 
 	@Override
 	public long play (float volume) {
-		if (streamIds.size == 8) streamIds.pop();
+		if (streamIds.size == MAX_STREAMS_COUNT) streamIds.pop();
 		int streamId = soundPool.play(soundId, volume, volume, 1, 0, 1);
 		// standardise error code with other backends
 		if (streamId == 0) return -1;
@@ -101,8 +102,8 @@ final class AndroidSound implements Sound {
 
 	@Override
 	public long loop (float volume) {
-		if (streamIds.size == 8) streamIds.pop();
-		int streamId = soundPool.play(soundId, volume, volume, 1, -1, 1);
+		if (streamIds.size == MAX_STREAMS_COUNT) streamIds.pop();
+		int streamId = soundPool.play(soundId, volume, volume, 2, -1, 1);
 		// standardise error code with other backends
 		if (streamId == 0) return -1;
 		streamIds.insert(0, streamId);
@@ -111,7 +112,14 @@ final class AndroidSound implements Sound {
 
 	@Override
 	public void setLooping (long soundId, boolean looping) {
-		soundPool.setLoop((int)soundId, looping ? -1 : 0);
+		int streamId = (int)soundId;
+		soundPool.pause(streamId);
+		soundPool.setLoop(streamId, looping ? -1 : 0);
+		if (looping)
+			soundPool.setPriority(streamId, 2);
+		else
+			soundPool.setPriority(streamId, 1);
+		soundPool.resume(streamId);
 	}
 
 	@Override
@@ -130,7 +138,7 @@ final class AndroidSound implements Sound {
 
 	@Override
 	public long play (float volume, float pitch, float pan) {
-		if (streamIds.size == 8) streamIds.pop();
+		if (streamIds.size == MAX_STREAMS_COUNT) streamIds.pop();
 		float leftVolume = volume;
 		float rightVolume = volume;
 		if (pan < 0) {
@@ -147,7 +155,7 @@ final class AndroidSound implements Sound {
 
 	@Override
 	public long loop (float volume, float pitch, float pan) {
-		if (streamIds.size == 8) streamIds.pop();
+		if (streamIds.size == MAX_STREAMS_COUNT) streamIds.pop();
 		float leftVolume = volume;
 		float rightVolume = volume;
 		if (pan < 0) {
@@ -155,15 +163,10 @@ final class AndroidSound implements Sound {
 		} else if (pan > 0) {
 			leftVolume *= (1 - Math.abs(pan));
 		}
-		int streamId = soundPool.play(soundId, leftVolume, rightVolume, 1, -1, pitch);
+		int streamId = soundPool.play(soundId, leftVolume, rightVolume, 2, -1, pitch);
 		// standardise error code with other backends
 		if (streamId == 0) return -1;
 		streamIds.insert(0, streamId);
 		return streamId;
-	}
-
-	@Override
-	public void setPriority (long soundId, int priority) {
-		soundPool.setPriority((int)soundId, priority);
 	}
 }

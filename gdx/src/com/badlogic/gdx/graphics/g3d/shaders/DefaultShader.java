@@ -62,6 +62,8 @@ public class DefaultShader extends BaseShader {
 		public int numSpotLights = 0;
 		/** The number of bones to use */
 		public int numBones = 12;
+		/** The number of bone weights to use (up to 8 with default vertex shader), default is 4. */
+		public int numBoneWeights = 4;
 		/** */
 		public boolean ignoreUnimplemented = true;
 		/** Set to 0 to disable culling, -1 to inherit from {@link DefaultShader#defaultCullFace} */
@@ -85,6 +87,7 @@ public class DefaultShader extends BaseShader {
 		public final static Uniform cameraPosition = new Uniform("u_cameraPosition");
 		public final static Uniform cameraDirection = new Uniform("u_cameraDirection");
 		public final static Uniform cameraUp = new Uniform("u_cameraUp");
+		public final static Uniform cameraNearFar = new Uniform("u_cameraNearFar");
 
 		public final static Uniform worldTrans = new Uniform("u_worldTrans");
 		public final static Uniform viewWorldTrans = new Uniform("u_viewWorldTrans");
@@ -157,6 +160,12 @@ public class DefaultShader extends BaseShader {
 				shader.set(inputID, shader.camera.up);
 			}
 		};
+		public final static Setter cameraNearFar = new GlobalSetter() {
+			@Override
+			public void set (BaseShader shader, int inputID, Renderable renderable, Attributes combinedAttributes) {
+				shader.set(inputID, shader.camera.near, shader.camera.far);
+			}
+		};
 		public final static Setter worldTrans = new LocalSetter() {
 			@Override
 			public void set (BaseShader shader, int inputID, Renderable renderable, Attributes combinedAttributes) {
@@ -198,10 +207,12 @@ public class DefaultShader extends BaseShader {
 
 			@Override
 			public void set (BaseShader shader, int inputID, Renderable renderable, Attributes combinedAttributes) {
-				for (int i = 0; i < bones.length; i++) {
+				for (int i = 0; i < bones.length; i += 16) {
 					final int idx = i / 16;
-					bones[i] = (renderable.bones == null || idx >= renderable.bones.length || renderable.bones[idx] == null) ? idtMatrix.val[i % 16]
-						: renderable.bones[idx].val[i % 16];
+					if (renderable.bones == null || idx >= renderable.bones.length || renderable.bones[idx] == null)
+						System.arraycopy(idtMatrix.val, 0, bones, i, 16);
+					else
+						System.arraycopy(renderable.bones[idx].val, 0, bones, i, 16);
 				}
 				shader.program.setUniformMatrix4fv(shader.loc(inputID), bones, 0, bones.length);
 			}
@@ -222,8 +233,8 @@ public class DefaultShader extends BaseShader {
 		public final static Setter diffuseTexture = new LocalSetter() {
 			@Override
 			public void set (BaseShader shader, int inputID, Renderable renderable, Attributes combinedAttributes) {
-				final int unit = shader.context.textureBinder.bind(((TextureAttribute)(combinedAttributes
-					.get(TextureAttribute.Diffuse))).textureDescription);
+				final int unit = shader.context.textureBinder
+					.bind(((TextureAttribute)(combinedAttributes.get(TextureAttribute.Diffuse))).textureDescription);
 				shader.set(inputID, unit);
 			}
 		};
@@ -243,8 +254,8 @@ public class DefaultShader extends BaseShader {
 		public final static Setter specularTexture = new LocalSetter() {
 			@Override
 			public void set (BaseShader shader, int inputID, Renderable renderable, Attributes combinedAttributes) {
-				final int unit = shader.context.textureBinder.bind(((TextureAttribute)(combinedAttributes
-					.get(TextureAttribute.Specular))).textureDescription);
+				final int unit = shader.context.textureBinder
+					.bind(((TextureAttribute)(combinedAttributes.get(TextureAttribute.Specular))).textureDescription);
 				shader.set(inputID, unit);
 			}
 		};
@@ -264,8 +275,8 @@ public class DefaultShader extends BaseShader {
 		public final static Setter emissiveTexture = new LocalSetter() {
 			@Override
 			public void set (BaseShader shader, int inputID, Renderable renderable, Attributes combinedAttributes) {
-				final int unit = shader.context.textureBinder.bind(((TextureAttribute)(combinedAttributes
-					.get(TextureAttribute.Emissive))).textureDescription);
+				final int unit = shader.context.textureBinder
+					.bind(((TextureAttribute)(combinedAttributes.get(TextureAttribute.Emissive))).textureDescription);
 				shader.set(inputID, unit);
 			}
 		};
@@ -285,8 +296,8 @@ public class DefaultShader extends BaseShader {
 		public final static Setter reflectionTexture = new LocalSetter() {
 			@Override
 			public void set (BaseShader shader, int inputID, Renderable renderable, Attributes combinedAttributes) {
-				final int unit = shader.context.textureBinder.bind(((TextureAttribute)(combinedAttributes
-					.get(TextureAttribute.Reflection))).textureDescription);
+				final int unit = shader.context.textureBinder
+					.bind(((TextureAttribute)(combinedAttributes.get(TextureAttribute.Reflection))).textureDescription);
 				shader.set(inputID, unit);
 			}
 		};
@@ -300,8 +311,8 @@ public class DefaultShader extends BaseShader {
 		public final static Setter normalTexture = new LocalSetter() {
 			@Override
 			public void set (BaseShader shader, int inputID, Renderable renderable, Attributes combinedAttributes) {
-				final int unit = shader.context.textureBinder.bind(((TextureAttribute)(combinedAttributes
-					.get(TextureAttribute.Normal))).textureDescription);
+				final int unit = shader.context.textureBinder
+					.bind(((TextureAttribute)(combinedAttributes.get(TextureAttribute.Normal))).textureDescription);
 				shader.set(inputID, unit);
 			}
 		};
@@ -315,8 +326,8 @@ public class DefaultShader extends BaseShader {
 		public final static Setter ambientTexture = new LocalSetter() {
 			@Override
 			public void set (BaseShader shader, int inputID, Renderable renderable, Attributes combinedAttributes) {
-				final int unit = shader.context.textureBinder.bind(((TextureAttribute)(combinedAttributes
-					.get(TextureAttribute.Ambient))).textureDescription);
+				final int unit = shader.context.textureBinder
+					.bind(((TextureAttribute)(combinedAttributes.get(TextureAttribute.Ambient))).textureDescription);
 				shader.set(inputID, unit);
 			}
 		};
@@ -372,8 +383,8 @@ public class DefaultShader extends BaseShader {
 			@Override
 			public void set (BaseShader shader, int inputID, Renderable renderable, Attributes combinedAttributes) {
 				if (combinedAttributes.has(CubemapAttribute.EnvironmentMap)) {
-					shader.set(inputID, shader.context.textureBinder.bind(((CubemapAttribute)combinedAttributes
-						.get(CubemapAttribute.EnvironmentMap)).textureDescription));
+					shader.set(inputID, shader.context.textureBinder
+						.bind(((CubemapAttribute)combinedAttributes.get(CubemapAttribute.EnvironmentMap)).textureDescription));
 				}
 			}
 		};
@@ -410,6 +421,7 @@ public class DefaultShader extends BaseShader {
 	public final int u_cameraPosition;
 	public final int u_cameraDirection;
 	public final int u_cameraUp;
+	public final int u_cameraNearFar;
 	public final int u_time;
 	// Object uniforms
 	public final int u_worldTrans;
@@ -490,7 +502,9 @@ public class DefaultShader extends BaseShader {
 	private Renderable renderable;
 	/** The attributes that this shader supports */
 	protected final long attributesMask;
-	private long vertexMask;
+	private final long vertexMask;
+	private final int textureCoordinates;
+	private int[] boneWeightsLocations;
 	protected final Config config;
 	/** Attributes which are not required but always supported. */
 	private final static long optionalAttributes = IntAttribute.CullFace | DepthTestAttribute.Type;
@@ -523,9 +537,11 @@ public class DefaultShader extends BaseShader {
 		this.shadowMap = lighting && renderable.environment.shadowMap != null;
 		this.renderable = renderable;
 		attributesMask = attributes.getMask() | optionalAttributes;
-		vertexMask = renderable.mesh.getVertexAttributes().getMask();
+		vertexMask = renderable.meshPart.mesh.getVertexAttributes().getMaskWithSizePacked();
+		textureCoordinates = renderable.meshPart.mesh.getVertexAttributes().getTextureCoordinates();
 
-		this.directionalLights = new DirectionalLight[lighting && config.numDirectionalLights > 0 ? config.numDirectionalLights : 0];
+		this.directionalLights = new DirectionalLight[lighting && config.numDirectionalLights > 0 ? config.numDirectionalLights
+			: 0];
 		for (int i = 0; i < directionalLights.length; i++)
 			directionalLights[i] = new DirectionalLight();
 		this.pointLights = new PointLight[lighting && config.numPointLights > 0 ? config.numPointLights : 0];
@@ -538,6 +554,18 @@ public class DefaultShader extends BaseShader {
 		if (!config.ignoreUnimplemented && (implementedFlags & attributesMask) != attributesMask)
 			throw new GdxRuntimeException("Some attributes not implemented yet (" + attributesMask + ")");
 
+		if (renderable.bones != null && renderable.bones.length > config.numBones) {
+			throw new GdxRuntimeException("too many bones: " + renderable.bones.length + ", max configured: " + config.numBones);
+		}
+
+		int boneWeights = renderable.meshPart.mesh.getVertexAttributes().getBoneWeights();
+		if (boneWeights > config.numBoneWeights) {
+			throw new GdxRuntimeException("too many bone weights: " + boneWeights + ", max configured: " + config.numBoneWeights);
+		}
+		if (renderable.bones != null) {
+			boneWeightsLocations = new int[config.numBoneWeights];
+		}
+
 		// Global uniforms
 		u_projTrans = register(Inputs.projTrans, Setters.projTrans);
 		u_viewTrans = register(Inputs.viewTrans, Setters.viewTrans);
@@ -545,6 +573,7 @@ public class DefaultShader extends BaseShader {
 		u_cameraPosition = register(Inputs.cameraPosition, Setters.cameraPosition);
 		u_cameraDirection = register(Inputs.cameraDirection, Setters.cameraDirection);
 		u_cameraUp = register(Inputs.cameraUp, Setters.cameraUp);
+		u_cameraNearFar = register(Inputs.cameraNearFar, Setters.cameraNearFar);
 		u_time = register(new Uniform("u_time"));
 		// Object uniforms
 		u_worldTrans = register(Inputs.worldTrans, Setters.worldTrans);
@@ -574,8 +603,9 @@ public class DefaultShader extends BaseShader {
 		u_ambientUVTransform = register(Inputs.ambientUVTransform, Setters.ambientUVTransform);
 		u_alphaTest = register(Inputs.alphaTest);
 
-		u_ambientCubemap = lighting ? register(Inputs.ambientCube, new Setters.ACubemap(config.numDirectionalLights,
-			config.numPointLights)) : -1;
+		u_ambientCubemap = lighting
+			? register(Inputs.ambientCube, new Setters.ACubemap(config.numDirectionalLights, config.numPointLights))
+			: -1;
 		u_environmentCubemap = environmentCubemap ? register(Inputs.environmentCubemap, Setters.environmentCubemap) : -1;
 	}
 
@@ -608,6 +638,12 @@ public class DefaultShader extends BaseShader {
 		spotLightsExponentOffset = loc(u_spotLights0exponent) - spotLightsLoc;
 		spotLightsSize = loc(u_spotLights1color) - spotLightsLoc;
 		if (spotLightsSize < 0) spotLightsSize = 0;
+
+		if (boneWeightsLocations != null) {
+			for (int i = 0; i < boneWeightsLocations.length; i++) {
+				boneWeightsLocations[i] = program.getAttributeLocation(ShaderProgram.BONEWEIGHT_ATTRIBUTE + i);
+			}
+		}
 	}
 
 	private static final boolean and (final long mask, final long flag) {
@@ -628,11 +664,18 @@ public class DefaultShader extends BaseShader {
 		return tmpAttributes;
 	}
 
+	private static final long combineAttributeMasks (final Renderable renderable) {
+		long mask = 0;
+		if (renderable.environment != null) mask |= renderable.environment.getMask();
+		if (renderable.material != null) mask |= renderable.material.getMask();
+		return mask;
+	}
+
 	public static String createPrefix (final Renderable renderable, final Config config) {
 		final Attributes attributes = combineAttributes(renderable);
 		String prefix = "";
 		final long attributesMask = attributes.getMask();
-		final long vertexMask = renderable.mesh.getVertexAttributes().getMask();
+		final long vertexMask = renderable.meshPart.mesh.getVertexAttributes().getMask();
 		if (and(vertexMask, Usage.Position)) prefix += "#define positionFlag\n";
 		if (or(vertexMask, Usage.ColorUnpacked | Usage.ColorPacked)) prefix += "#define colorFlag\n";
 		if (and(vertexMask, Usage.BiNormal)) prefix += "#define binormalFlag\n";
@@ -652,12 +695,15 @@ public class DefaultShader extends BaseShader {
 				if (attributes.has(CubemapAttribute.EnvironmentMap)) prefix += "#define environmentCubemapFlag\n";
 			}
 		}
-		final int n = renderable.mesh.getVertexAttributes().size();
+		final int n = renderable.meshPart.mesh.getVertexAttributes().size();
 		for (int i = 0; i < n; i++) {
-			final VertexAttribute attr = renderable.mesh.getVertexAttributes().get(i);
-			if (attr.usage == Usage.BoneWeight)
-				prefix += "#define boneWeight" + attr.unit + "Flag\n";
-			else if (attr.usage == Usage.TextureCoordinates) prefix += "#define texCoord" + attr.unit + "Flag\n";
+			final VertexAttribute attr = renderable.meshPart.mesh.getVertexAttributes().get(i);
+			if (attr.usage == Usage.TextureCoordinates) prefix += "#define texCoord" + attr.unit + "Flag\n";
+		}
+		if (renderable.bones != null) {
+			for (int i = 0; i < config.numBoneWeights; i++) {
+				prefix += "#define boneWeight" + i + "Flag\n";
+			}
 		}
 		if ((attributesMask & BlendingAttribute.Type) == BlendingAttribute.Type)
 			prefix += "#define " + BlendingAttribute.Alias + "Flag\n";
@@ -703,9 +749,15 @@ public class DefaultShader extends BaseShader {
 
 	@Override
 	public boolean canRender (final Renderable renderable) {
-		final Attributes attributes = combineAttributes(renderable);
-		return (attributesMask == (attributes.getMask() | optionalAttributes))
-			&& (vertexMask == renderable.mesh.getVertexAttributes().getMask()) && (renderable.environment != null) == lighting;
+		if (renderable.bones != null) {
+			if (renderable.bones.length > config.numBones) return false;
+			if (renderable.meshPart.mesh.getVertexAttributes().getBoneWeights() > config.numBoneWeights) return false;
+		}
+		if (renderable.meshPart.mesh.getVertexAttributes().getTextureCoordinates() != textureCoordinates) return false;
+		final long renderableMask = combineAttributeMasks(renderable);
+		return (attributesMask == (renderableMask | optionalAttributes))
+			&& (vertexMask == renderable.meshPart.mesh.getVertexAttributes().getMaskWithSizePacked())
+			&& (renderable.environment != null) == lighting;
 	}
 
 	@Override
@@ -717,15 +769,14 @@ public class DefaultShader extends BaseShader {
 
 	@Override
 	public boolean equals (Object obj) {
-		return (obj instanceof DefaultShader) ? equals((DefaultShader)obj) : false;
+		return (obj instanceof DefaultShader) && equals((DefaultShader)obj);
 	}
 
 	public boolean equals (DefaultShader obj) {
 		return (obj == this);
 	}
 
-	private Matrix3 normalMatrix = new Matrix3();
-	private Camera camera;
+	private final Matrix3 normalMatrix = new Matrix3();
 	private float time;
 	private boolean lightsSet;
 
@@ -742,6 +793,15 @@ public class DefaultShader extends BaseShader {
 		lightsSet = false;
 
 		if (has(u_time)) set(u_time, time += Gdx.graphics.getDeltaTime());
+
+		// set generic vertex attribute value for all bone weights in case a mesh has missing attributes.
+		if (boneWeightsLocations != null) {
+			for (int location : boneWeightsLocations) {
+				if (location >= 0) {
+					Gdx.gl.glVertexAttrib2f(location, 0, 0);
+				}
+			}
+		}
 	}
 
 	@Override
@@ -856,8 +916,7 @@ public class DefaultShader extends BaseShader {
 				program.setUniformf(idx + spotLightsDirectionOffset, spotLights[i].direction);
 				program.setUniformf(idx + spotLightsCutoffAngleOffset, spotLights[i].cutoffAngle);
 				program.setUniformf(idx + spotLightsExponentOffset, spotLights[i].exponent);
-				if (spotLightsIntensityOffset >= 0)
-					program.setUniformf(idx + spotLightsIntensityOffset, spotLights[i].intensity);
+				if (spotLightsIntensityOffset >= 0) program.setUniformf(idx + spotLightsIntensityOffset, spotLights[i].intensity);
 				if (spotLightsSize <= 0) break;
 			}
 		}

@@ -66,7 +66,7 @@ public class OrthogonalTiledMapRenderer extends BatchTiledMapRenderer {
 	@Override
 	public void renderTileLayer (TiledMapTileLayer layer) {
 		final Color batchColor = batch.getColor();
-		final float color = Color.toFloatBits(batchColor.r, batchColor.g, batchColor.b, batchColor.a * layer.getOpacity());
+		final float color = getTileLayerColor(layer, batchColor);
 
 		final int layerWidth = layer.getWidth();
 		final int layerHeight = layer.getHeight();
@@ -74,14 +74,20 @@ public class OrthogonalTiledMapRenderer extends BatchTiledMapRenderer {
 		final float layerTileWidth = layer.getTileWidth() * unitScale;
 		final float layerTileHeight = layer.getTileHeight() * unitScale;
 
-		final int col1 = Math.max(0, (int)(viewBounds.x / layerTileWidth));
-		final int col2 = Math.min(layerWidth, (int)((viewBounds.x + viewBounds.width + layerTileWidth) / layerTileWidth));
+		final float layerOffsetX = layer.getRenderOffsetX() * unitScale - viewBounds.x * (layer.getParallaxX() - 1);
+		// offset in tiled is y down, so we flip it
+		final float layerOffsetY = -layer.getRenderOffsetY() * unitScale - viewBounds.y * (layer.getParallaxY() - 1);
 
-		final int row1 = Math.max(0, (int)(viewBounds.y / layerTileHeight));
-		final int row2 = Math.min(layerHeight, (int)((viewBounds.y + viewBounds.height + layerTileHeight) / layerTileHeight));
+		final int col1 = Math.max(0, (int)((viewBounds.x - layerOffsetX) / layerTileWidth));
+		final int col2 = Math.min(layerWidth,
+			(int)((viewBounds.x + viewBounds.width + layerTileWidth - layerOffsetX) / layerTileWidth));
 
-		float y = row2 * layerTileHeight;
-		float xStart = col1 * layerTileWidth;
+		final int row1 = Math.max(0, (int)((viewBounds.y - layerOffsetY) / layerTileHeight));
+		final int row2 = Math.min(layerHeight,
+			(int)((viewBounds.y + viewBounds.height + layerTileHeight - layerOffsetY) / layerTileHeight));
+
+		float y = row2 * layerTileHeight + layerOffsetY;
+		float xStart = col1 * layerTileWidth + layerOffsetX;
 		final float[] vertices = this.vertices;
 
 		for (int row = row2; row >= row1; row--) {

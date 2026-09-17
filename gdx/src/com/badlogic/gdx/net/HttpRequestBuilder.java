@@ -22,7 +22,6 @@ import java.util.Map;
 import com.badlogic.gdx.Net.HttpRequest;
 import com.badlogic.gdx.utils.Base64Coder;
 import com.badlogic.gdx.utils.Json;
-import com.badlogic.gdx.utils.Pools;
 
 /** A builder for {@link HttpRequest}s.
  * 
@@ -50,7 +49,7 @@ public class HttpRequestBuilder {
 			throw new IllegalStateException("A new request has already been started. Call HttpRequestBuilder.build() first.");
 		}
 
-		httpRequest = Pools.obtain(HttpRequest.class);
+		httpRequest = new HttpRequest();
 		httpRequest.setTimeOut(defaultTimeout);
 		return this;
 	}
@@ -87,6 +86,13 @@ public class HttpRequestBuilder {
 		return this;
 	}
 
+	/** @see HttpRequest#setIncludeCredentials(boolean) */
+	public HttpRequestBuilder includeCredentials (boolean includeCredentials) {
+		validate();
+		httpRequest.setIncludeCredentials(includeCredentials);
+		return this;
+	}
+
 	/** @see HttpRequest#setHeader(String, String) */
 	public HttpRequestBuilder header (String name, String value) {
 		validate();
@@ -117,7 +123,8 @@ public class HttpRequestBuilder {
 		return this;
 	}
 
-	/** Sets the correct {@code ContentType} and encodes the given content object via {@link #json}, then sets it as the content. */
+	/** Sets the correct {@code ContentType} and encodes the given content object via {@link #json}, then sets it as the
+	 * content. */
 	public HttpRequestBuilder jsonContent (Object content) {
 		validate();
 		httpRequest.setHeader(HttpRequestHeader.ContentType, "application/json");

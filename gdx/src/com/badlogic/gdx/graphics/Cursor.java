@@ -2,21 +2,17 @@
 package com.badlogic.gdx.graphics;
 
 import com.badlogic.gdx.Graphics;
+import com.badlogic.gdx.utils.Disposable;
 
-/** <p>
- * A class representing a native cursor.
- * </p>
- * 
+/**
  * <p>
- * Cursor instances are created via a call to {@link Graphics#newCursor(Pixmap, int, int)}.
+ * Represents a mouse cursor. Create a cursor via {@link Graphics#newCursor(Pixmap, int, int)}. To set the cursor use
+ * {@link Graphics#setCursor(Cursor)}. To use one of the system cursors, call Graphics#setSystemCursor
  * </p>
- * 
- * <p>
- * Cursor are set using {@link Graphics#setCursor(Cursor)}.
- * </p> **/
-public interface Cursor {
-	/**
-	 * set the desktop mouse cursor to this cursor. 
-	 */
-	public void setSystemCursor ();
+ **/
+public interface Cursor extends Disposable {
+
+	public static enum SystemCursor {
+		Arrow, Ibeam, Crosshair, Hand, HorizontalResize, VerticalResize, NWSEResize, NESWResize, AllResize, NotAllowed, None
+	}
 }

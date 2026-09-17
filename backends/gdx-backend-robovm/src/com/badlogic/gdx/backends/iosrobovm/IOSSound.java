@@ -18,7 +18,6 @@ package com.badlogic.gdx.backends.iosrobovm;
 
 import org.robovm.apple.foundation.NSArray;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.backends.iosrobovm.objectal.ALBuffer;
 import com.badlogic.gdx.backends.iosrobovm.objectal.ALChannelSource;
@@ -28,18 +27,18 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.utils.IntArray;
 
 /** @author tescott
- *  @author Tomski
+ * @author Tomski
  * 
  *         First pass at implementing OALSimpleAudio support. */
 public class IOSSound implements Sound {
 
 	private ALBuffer soundBuffer;
 	private String soundPath;
-	
+
 	private ALChannelSource channel;
 	private NSArray<ALSource> sourcePool;
 	private IntArray streamIds = new IntArray(8);
-	
+
 	public IOSSound (FileHandle filePath) {
 		soundPath = filePath.file().getPath().replace('\\', '/');
 		soundBuffer = OALSimpleAudio.sharedInstance().preloadEffect(soundPath);
@@ -97,7 +96,7 @@ public class IOSSound implements Sound {
 	@Override
 	public void dispose () {
 		stop();
-		soundBuffer.dispose();
+		OALSimpleAudio.sharedInstance().unloadEffect(soundPath);
 	}
 
 	@Override
@@ -134,11 +133,6 @@ public class IOSSound implements Sound {
 	}
 
 	@Override
-	public void setPriority (long soundId, int priority) {
-		// TODO Auto-generated method stub
-	}
-
-	@Override
 	public void pause () {
 		ALSource source;
 		for (int i = 0; i < streamIds.size; i++) {
@@ -165,10 +159,10 @@ public class IOSSound implements Sound {
 		ALSource source;
 		if ((source = getSoundSource(soundId)) != null) source.setPaused(false);
 	}
-	
-	private ALSource getSoundSource (long soundId) {	
+
+	private ALSource getSoundSource (long soundId) {
 		for (ALSource source : sourcePool) {
-			if (source.getSourceId() == soundId) return source;			
+			if (source.getSourceId() == soundId) return source;
 		}
 		return null;
 	}

@@ -23,12 +23,12 @@ public interface Vector<T extends Vector<T>> {
 	/** @return a copy of this vector */
 	T cpy ();
 
-	/** @return The euclidean length */
+	/** @return The Euclidean length */
 	float len ();
 
 	/** This method is faster than {@link Vector#len()} because it avoids calculating a square root. It is useful for comparisons,
 	 * but not for getting exact lengths, as the return value is the square of the actual length.
-	 * @return The squared euclidean length */
+	 * @return The squared Euclidean length */
 	float len2 ();
 
 	/** Limits the length of this vector, based on the desired maximum length.
@@ -44,12 +44,12 @@ public interface Vector<T extends Vector<T>> {
 	 * @see #len2() */
 	T limit2 (float limit2);
 
-	/** Sets the length of this vector. Does nothing is this vector is zero.
+	/** Sets the length of this vector. Does nothing if this vector is zero.
 	 * @param len desired length for this vector
 	 * @return this vector for chaining */
 	T setLength (float len);
 
-	/** Sets the length of this vector, based on the square of the desired length. Does nothing is this vector is zero.
+	/** Sets the length of this vector, based on the square of the desired length. Does nothing if this vector is zero.
 	 * <p />
 	 * This method is slightly faster than setLength().
 	 * @param len2 desired square of the length for this vector
@@ -120,6 +120,10 @@ public interface Vector<T extends Vector<T>> {
 	 * @return This vector for chaining. */
 	T interpolate (T target, float alpha, Interpolation interpolator);
 
+	/** Sets this vector to the unit vector with a random direction
+	 * @return This vector for chaining */
+	T setToRandomDirection ();
+
 	/** @return Whether this vector is a unit length vector */
 	boolean isUnit ();
 
@@ -161,10 +165,12 @@ public interface Vector<T extends Vector<T>> {
 	 * @param epsilon a positive small number close to zero */
 	boolean isPerpendicular (T other, float epsilon);
 
-	/** @return Whether this vector has similar direction compared to the other vector. True if the normalized dot product is > 0. */
+	/** @return Whether this vector has similar direction compared to the other vector. True if the normalized dot product is >
+	 *         0. */
 	boolean hasSameDirection (T other);
 
-	/** @return Whether this vector has opposite direction compared to the other vector. True if the normalized dot product is < 0. */
+	/** @return Whether this vector has opposite direction compared to the other vector. True if the normalized dot product is <
+	 *         0. */
 	boolean hasOppositeDirection (T other);
 
 	/** Compares this vector with the other vector, using the supplied epsilon for fuzzy equality testing.

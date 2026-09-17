@@ -39,26 +39,44 @@ public class ChainShape extends Shape {
 		return Type.Chain;
 	}
 
+	/** Create a loop. This automatically adjusts connectivity.
+	 * @param vertices an array of floats of alternating x, y coordinates. */
 	public void createLoop (float[] vertices) {
 		Vec2[] v = new Vec2[vertices.length / 2];
 		for (int i = 0, vi = 0; i < vertices.length; i += 2, vi++) {
 			v[vi] = new Vec2(vertices[i], vertices[i + 1]);
-		}		
+		}
 		shape.createLoop(v, v.length);
 		isLooped = true;
 	}
-	
+
+	/** Create a loop. This automatically adjusts connectivity.
+	 * @param vertices an array of floats of alternating x, y coordinates.
+	 * @param offset into the vertices array
+	 * @param length after offset (in floats, not float-pairs, so even number) */
+	public void createLoop (float[] vertices, int offset, int length) {
+		final int vertexCount = length / 2;
+		Vec2[] v = new Vec2[vertexCount];
+		for (int i = offset, vi = 0; vi < vertexCount; i += 2, vi++) {
+			v[vi] = new Vec2(vertices[i], vertices[i + 1]);
+		}
+		shape.createLoop(v, vertexCount);
+		isLooped = true;
+	}
+
 	/** Create a loop. This automatically adjusts connectivity.
 	 * @param vertices an array of vertices, these are copied */
 	public void createLoop (Vector2[] vertices) {
 		Vec2[] v = new Vec2[vertices.length];
 		for (int i = 0; i < vertices.length; i++) {
 			v[i] = new Vec2(vertices[i].x, vertices[i].y);
-		}		
+		}
 		shape.createLoop(v, v.length);
 		isLooped = true;
 	}
 
+	/** Create a chain with isolated end vertices.
+	 * @param vertices an array of floats of alternating x, y coordinates. */
 	public void createChain (float[] vertices) {
 		Vec2[] v = new Vec2[vertices.length / 2];
 		for (int i = 0, vi = 0; i < vertices.length; i += 2, vi++) {
@@ -67,7 +85,21 @@ public class ChainShape extends Shape {
 		shape.createChain(v, v.length);
 		isLooped = false;
 	}
-	
+
+	/** Create a chain with isolated end vertices.
+	 * @param vertices an array of floats of alternating x, y coordinates.
+	 * @param offset into the vertices array
+	 * @param length after offset (in floats, not float-pairs, so even number) */
+	public void createChain (float[] vertices, int offset, int length) {
+		final int vertexCount = length / 2;
+		Vec2[] v = new Vec2[vertexCount];
+		for (int i = offset, vi = 0; vi < vertexCount; i += 2, vi++) {
+			v[vi] = new Vec2(vertices[i], vertices[i + 1]);
+		}
+		shape.createChain(v, vertexCount);
+		isLooped = false;
+	}
+
 	/** Create a chain with isolated end vertices.
 	 * @param vertices an array of vertices, these are copied */
 	public void createChain (Vector2[] vertices) {
@@ -110,6 +142,11 @@ public class ChainShape extends Shape {
 	public void getVertex (int index, Vector2 vertex) {
 		Vec2 v = shape.m_vertices[index];
 		vertex.set(v.x, v.y);
+	}
+
+	/** Clear all vertices in the chain and free the memory. */
+	public void clear () {
+		shape.clear();
 	}
 
 	@Override

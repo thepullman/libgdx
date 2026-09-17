@@ -22,10 +22,11 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont.Glyph;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout.GlyphRun;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.FloatArray;
+import com.badlogic.gdx.utils.FlushablePool;
 import com.badlogic.gdx.utils.IntArray;
 import com.badlogic.gdx.utils.NumberUtils;
-import com.badlogic.gdx.utils.Pools;
+
+import java.util.Arrays;
 
 /** Caches glyph geometry for a BitmapFont, providing a fast way to render static text. This saves needing to compute the glyph
  * geometry each frame.
@@ -34,12 +35,16 @@ import com.badlogic.gdx.utils.Pools;
  * @author Alexander Dorokhov */
 public class BitmapFontCache {
 	static private final Color tempColor = new Color(1, 1, 1, 1);
-	static private final float whiteTint = Color.WHITE.toFloatBits();
 
 	private final BitmapFont font;
 	private boolean integer;
-	private final Array<GlyphLayout> layouts = new Array();
-	private final Array<GlyphLayout> pooledLayouts = new Array();
+	private final Array<GlyphLayout> layouts = new Array(1);
+	private final FlushablePool<GlyphLayout> pooledLayouts = new FlushablePool<GlyphLayout>() {
+		@Override
+		protected GlyphLayout newObject () {
+			return new GlyphLayout();
+		}
+	};
 	private int glyphCount;
 	private float x, y;
 	private final Color color = new Color(1, 1, 1, 1);
@@ -97,11 +102,12 @@ public class BitmapFontCache {
 		x += xAmount;
 		y += yAmount;
 
-		for (int j = 0, length = pageVertices.length; j < length; j++) {
-			float[] vertices = pageVertices[j];
-			for (int i = 0, n = idx[j]; i < n; i += 5) {
-				vertices[i] += xAmount;
-				vertices[i + 1] += yAmount;
+		float[][] pageVertices = this.pageVertices;
+		for (int i = 0, n = pageVertices.length; i < n; i++) {
+			float[] vertices = pageVertices[i];
+			for (int ii = 0, nn = idx[i]; ii < nn; ii += 5) {
+				vertices[ii] += xAmount;
+				vertices[ii + 1] += yAmount;
 			}
 		}
 	}
@@ -112,24 +118,33 @@ public class BitmapFontCache {
 		if (currentTint == newTint) return;
 		currentTint = newTint;
 
+		float[][] pageVertices = this.pageVertices;
+		Color tempColor = BitmapFontCache.tempColor;
 		int[] tempGlyphCount = this.tempGlyphCount;
-		for (int i = 0, n = tempGlyphCount.length; i < n; i++)
-			tempGlyphCount[i] = 0;
+		Arrays.fill(tempGlyphCount, 0);
 
 		for (int i = 0, n = layouts.size; i < n; i++) {
 			GlyphLayout layout = layouts.get(i);
+			IntArray colors = layout.colors;
+			int colorsIndex = 0, nextColorGlyphIndex = 0, glyphIndex = 0;
+			float lastColorFloatBits = 0;
 			for (int ii = 0, nn = layout.runs.size; ii < nn; ii++) {
 				GlyphRun run = layout.runs.get(ii);
-				Array<Glyph> glyphs = run.glyphs;
-				float colorFloat = tempColor.set(run.color).mul(tint).toFloatBits();
-				for (int iii = 0, nnn = glyphs.size; iii < nnn; iii++) {
-					Glyph glyph = glyphs.get(iii);
-					int page = glyph.page;
+				Object[] glyphs = run.glyphs.items;
+				for (int iii = 0, nnn = run.glyphs.size; iii < nnn; iii++) {
+					if (glyphIndex++ == nextColorGlyphIndex) {
+						Color.abgr8888ToColor(tempColor, colors.get(++colorsIndex));
+						lastColorFloatBits = tempColor.mul(tint).toFloatBits();
+						nextColorGlyphIndex = ++colorsIndex < colors.size ? colors.get(colorsIndex) : -1;
+					}
+					int page = ((Glyph)glyphs[iii]).page;
 					int offset = tempGlyphCount[page] * 20 + 2;
 					tempGlyphCount[page]++;
 					float[] vertices = pageVertices[page];
-					for (int v = 0; v < 20; v += 5)
-						vertices[offset + v] = colorFloat;
+					vertices[offset] = lastColorFloatBits;
+					vertices[offset + 5] = lastColorFloatBits;
+					vertices[offset + 10] = lastColorFloatBits;
+					vertices[offset + 15] = lastColorFloatBits;
 				}
 			}
 		}
@@ -187,7 +202,7 @@ public class BitmapFontCache {
 	public void setColors (float color, int start, int end) {
 		if (pageVertices.length == 1) { // One page.
 			float[] vertices = pageVertices[0];
-			for (int i = start * 20 + 2, n = end * 20; i < n; i += 5)
+			for (int i = start * 20 + 2, n = Math.min(end * 20, idx[0]); i < n; i += 5)
 				vertices[i] = color;
 			return;
 		}
@@ -205,8 +220,11 @@ public class BitmapFontCache {
 
 				// If inside start and end, change its colour.
 				if (glyphIndex >= start) { // && glyphIndex < end
-					for (int off = 0; off < 20; off += 5)
-						vertices[off + (j * 20 + 2)] = color;
+					int offset = j * 20 + 2;
+					vertices[offset] = color;
+					vertices[offset + 5] = color;
+					vertices[offset + 10] = color;
+					vertices[offset + 15] = color;
 				}
 			}
 		}
@@ -261,8 +279,7 @@ public class BitmapFontCache {
 				if (offset == -1 && glyphIndex >= start) offset = ii;
 
 				// Determine the vertex count by counting glyphs within bounds.
-				if (glyphIndex >= start) // && gInd < end
-					count++;
+				if (glyphIndex >= start) count++;
 			}
 
 			// Page doesn't need to be rendered.
@@ -291,9 +308,9 @@ public class BitmapFontCache {
 	public void clear () {
 		x = 0;
 		y = 0;
-		Pools.freeAll(pooledLayouts, true);
-		pooledLayouts.clear();
+		pooledLayouts.flush();
 		layouts.clear();
+		glyphCount = 0;
 		for (int i = 0, n = idx.length; i < n; i++) {
 			if (pageGlyphIndices != null) pageGlyphIndices[i].clear();
 			idx[i] = 0;
@@ -302,20 +319,17 @@ public class BitmapFontCache {
 
 	private void requireGlyphs (GlyphLayout layout) {
 		if (pageVertices.length == 1) {
-			// Simpler counting if we just have one page.
-			int newGlyphCount = 0;
-			for (int i = 0, n = layout.runs.size; i < n; i++)
-				newGlyphCount += layout.runs.get(i).glyphs.size;
-			requirePageGlyphs(0, newGlyphCount);
+			// Simple if we just have one page.
+			requirePageGlyphs(0, layout.glyphCount);
 		} else {
 			int[] tempGlyphCount = this.tempGlyphCount;
-			for (int i = 0, n = tempGlyphCount.length; i < n; i++)
-				tempGlyphCount[i] = 0;
+			Arrays.fill(tempGlyphCount, 0);
 			// Determine # of glyphs in each page.
 			for (int i = 0, n = layout.runs.size; i < n; i++) {
 				Array<Glyph> glyphs = layout.runs.get(i).glyphs;
+				Object[] glyphItems = glyphs.items;
 				for (int ii = 0, nn = glyphs.size; ii < nn; ii++)
-					tempGlyphCount[glyphs.get(ii).page]++;
+					tempGlyphCount[((Glyph)glyphItems[ii]).page]++;
 			}
 			// Require that many for each page.
 			for (int i = 0, n = tempGlyphCount.length; i < n; i++)
@@ -326,7 +340,7 @@ public class BitmapFontCache {
 	private void requirePageGlyphs (int page, int glyphCount) {
 		if (pageGlyphIndices != null) {
 			if (glyphCount > pageGlyphIndices[page].items.length)
-				pageGlyphIndices[page].ensureCapacity(glyphCount - pageGlyphIndices[page].items.length);
+				pageGlyphIndices[page].ensureCapacity(glyphCount - pageGlyphIndices[page].size);
 		}
 
 		int vertexCount = idx[page] + glyphCount * 20;
@@ -340,47 +354,57 @@ public class BitmapFontCache {
 		}
 	}
 
-	private void addToCache (GlyphLayout layout, float x, float y) {
-		// Check if the number of font pages has changed.
-		int pageCount = font.regions.size;
-		if (pageVertices.length < pageCount) {
-			float[][] newPageVertices = new float[pageCount][];
-			System.arraycopy(pageVertices, 0, newPageVertices, 0, pageVertices.length);
-			pageVertices = newPageVertices;
+	private void setPageCount (int pageCount) {
+		float[][] newPageVertices = new float[pageCount][];
+		System.arraycopy(pageVertices, 0, newPageVertices, 0, pageVertices.length);
+		pageVertices = newPageVertices;
 
-			int[] newIdx = new int[pageCount];
-			System.arraycopy(idx, 0, newIdx, 0, idx.length);
-			idx = newIdx;
+		int[] newIdx = new int[pageCount];
+		System.arraycopy(idx, 0, newIdx, 0, idx.length);
+		idx = newIdx;
 
-			IntArray[] newPageGlyphIndices = new IntArray[pageCount];
-			int pageGlyphIndicesLength = 0;
-			if (pageGlyphIndices != null) {
-				pageGlyphIndicesLength = pageGlyphIndices.length;
-				System.arraycopy(pageGlyphIndices, 0, newPageGlyphIndices, 0, pageGlyphIndices.length);
-			}
-			for (int i = pageGlyphIndicesLength; i < pageCount; i++)
-				newPageGlyphIndices[i] = new IntArray();
-			pageGlyphIndices = newPageGlyphIndices;
-
-			tempGlyphCount = new int[pageCount];
+		IntArray[] newPageGlyphIndices = new IntArray[pageCount];
+		int pageGlyphIndicesLength = 0;
+		if (pageGlyphIndices != null) {
+			pageGlyphIndicesLength = pageGlyphIndices.length;
+			System.arraycopy(pageGlyphIndices, 0, newPageGlyphIndices, 0, pageGlyphIndices.length);
 		}
+		for (int i = pageGlyphIndicesLength; i < pageCount; i++)
+			newPageGlyphIndices[i] = new IntArray();
+		pageGlyphIndices = newPageGlyphIndices;
+
+		tempGlyphCount = new int[pageCount];
+	}
+
+	private void addToCache (GlyphLayout layout, float x, float y) {
+		int runCount = layout.runs.size;
+		if (runCount == 0) return;
+
+		// Check if the number of font pages has changed.
+		if (pageVertices.length < font.regions.size) setPageCount(font.regions.size);
 
 		layouts.add(layout);
 		requireGlyphs(layout);
-		for (int i = 0, n = layout.runs.size; i < n; i++) {
+
+		IntArray colors = layout.colors;
+		int colorsIndex = 0, nextColorGlyphIndex = 0, glyphIndex = 0;
+		float lastColorFloatBits = 0;
+		for (int i = 0; i < runCount; i++) {
 			GlyphRun run = layout.runs.get(i);
-			Array<Glyph> glyphs = run.glyphs;
-			FloatArray xAdvances = run.xAdvances;
-			float color = run.color.toFloatBits();
+			Object[] glyphs = run.glyphs.items;
+			float[] xAdvances = run.xAdvances.items;
 			float gx = x + run.x, gy = y + run.y;
-			for (int ii = 0, nn = glyphs.size; ii < nn; ii++) {
-				Glyph glyph = glyphs.get(ii);
-				gx += xAdvances.get(ii);
-				addGlyph(glyph, gx, gy, color);
+			for (int ii = 0, nn = run.glyphs.size; ii < nn; ii++) {
+				if (glyphIndex++ == nextColorGlyphIndex) {
+					lastColorFloatBits = NumberUtils.intToFloatColor(colors.get(++colorsIndex));
+					nextColorGlyphIndex = ++colorsIndex < colors.size ? colors.get(colorsIndex) : -1;
+				}
+				gx += xAdvances[ii];
+				addGlyph((Glyph)glyphs[ii], gx, gy, lastColorFloatBits);
 			}
 		}
 
-		currentTint = whiteTint; // Cached glyphs have changed, reset the current tint.
+		currentTint = Color.WHITE_FLOAT_BITS; // Cached glyphs have changed, reset the current tint.
 	}
 
 	private void addGlyph (Glyph glyph, float x, float y, float color) {
@@ -431,43 +455,59 @@ public class BitmapFontCache {
 	}
 
 	/** Clears any cached glyphs and adds glyphs for the specified text.
-	 * @see #addText(CharSequence, float, float, int, int, float, int, boolean) */
+	 * @see #addText(CharSequence, float, float, int, int, float, int, boolean, String) */
 	public GlyphLayout setText (CharSequence str, float x, float y) {
 		clear();
 		return addText(str, x, y, 0, str.length(), 0, Align.left, false);
 	}
 
 	/** Clears any cached glyphs and adds glyphs for the specified text.
-	 * @see #addText(CharSequence, float, float, int, int, float, int, boolean) */
+	 * @see #addText(CharSequence, float, float, int, int, float, int, boolean, String) */
 	public GlyphLayout setText (CharSequence str, float x, float y, float targetWidth, int halign, boolean wrap) {
 		clear();
 		return addText(str, x, y, 0, str.length(), targetWidth, halign, wrap);
 	}
 
 	/** Clears any cached glyphs and adds glyphs for the specified text.
-	 * @see #addText(CharSequence, float, float, int, int, float, int, boolean) */
-	public GlyphLayout setText (CharSequence str, float x, float y, int start, int end, float targetWidth, int halign, boolean wrap) {
+	 * @see #addText(CharSequence, float, float, int, int, float, int, boolean, String) */
+	public GlyphLayout setText (CharSequence str, float x, float y, int start, int end, float targetWidth, int halign,
+		boolean wrap) {
 		clear();
 		return addText(str, x, y, start, end, targetWidth, halign, wrap);
 	}
 
+	/** Clears any cached glyphs and adds glyphs for the specified text.
+	 * @see #addText(CharSequence, float, float, int, int, float, int, boolean, String) */
+	public GlyphLayout setText (CharSequence str, float x, float y, int start, int end, float targetWidth, int halign,
+		boolean wrap, String truncate) {
+		clear();
+		return addText(str, x, y, start, end, targetWidth, halign, wrap, truncate);
+	}
+
 	/** Clears any cached glyphs and adds the specified glyphs.
-	 * @see #addText(CharSequence, float, float, int, int, float, int, boolean) */
+	 * @see #addText(CharSequence, float, float, int, int, float, int, boolean, String) */
 	public void setText (GlyphLayout layout, float x, float y) {
 		clear();
 		addText(layout, x, y);
 	}
 
 	/** Adds glyphs for the specified text.
-	 * @see #addText(CharSequence, float, float, int, int, float, int, boolean) */
+	 * @see #addText(CharSequence, float, float, int, int, float, int, boolean, String) */
 	public GlyphLayout addText (CharSequence str, float x, float y) {
-		return addText(str, x, y, 0, str.length(), 0, Align.left, false);
+		return addText(str, x, y, 0, str.length(), 0, Align.left, false, null);
 	}
 
 	/** Adds glyphs for the specified text.
-	 * @see #addText(CharSequence, float, float, int, int, float, int, boolean) */
+	 * @see #addText(CharSequence, float, float, int, int, float, int, boolean, String) */
 	public GlyphLayout addText (CharSequence str, float x, float y, float targetWidth, int halign, boolean wrap) {
-		return addText(str, x, y, 0, str.length(), targetWidth, halign, wrap);
+		return addText(str, x, y, 0, str.length(), targetWidth, halign, wrap, null);
+	}
+
+	/** Adds glyphs for the specified text.
+	 * @see #addText(CharSequence, float, float, int, int, float, int, boolean, String) */
+	public GlyphLayout addText (CharSequence str, float x, float y, int start, int end, float targetWidth, int halign,
+		boolean wrap) {
+		return addText(str, x, y, start, end, targetWidth, halign, wrap, null);
 	}
 
 	/** Adds glyphs for the the specified text.
@@ -475,16 +515,22 @@ public class BitmapFontCache {
 	 * @param y The y position for the top of most capital letters in the font (the {@link BitmapFontData#capHeight cap height}).
 	 * @param start The first character of the string to draw.
 	 * @param end The last character of the string to draw (exclusive).
+	 * @param targetWidth The width of the area the text will be drawn, for wrapping or truncation.
+	 * @param halign Horizontal alignment of the text, see {@link Align}.
+	 * @param wrap If true, the text will be wrapped within targetWidth.
+	 * @param truncate If not null, the text will be truncated within targetWidth with this string appended. May be an empty
+	 *           string.
 	 * @return The glyph layout for the cached string (the layout's height is the distance from y to the baseline). */
-	public GlyphLayout addText (CharSequence str, float x, float y, int start, int end, float targetWidth, int halign, boolean wrap) {
-		GlyphLayout layout = Pools.obtain(GlyphLayout.class);
-		pooledLayouts.add(layout);
-		layout.setText(font, str, start, end, color, targetWidth, halign, wrap, null);
+	public GlyphLayout addText (CharSequence str, float x, float y, int start, int end, float targetWidth, int halign,
+		boolean wrap, String truncate) {
+		GlyphLayout layout = pooledLayouts.obtain();
+		layout.setText(font, str, start, end, color, targetWidth, halign, wrap, truncate);
 		addText(layout, x, y);
 		return layout;
 	}
 
-	/** Adds the specified glyphs. */
+	/** Adds the specified glyphs.
+	 * @param layout The cache keeps the layout until cleared or new text is set. The layout should not be modified before then. */
 	public void addText (GlyphLayout layout, float x, float y) {
 		addToCache(layout, x, y + font.data.ascent);
 	}
@@ -514,12 +560,20 @@ public class BitmapFontCache {
 		return integer;
 	}
 
+	public int getPageCount () {
+		return pageVertices.length;
+	}
+
 	public float[] getVertices () {
 		return getVertices(0);
 	}
 
 	public float[] getVertices (int page) {
 		return pageVertices[page];
+	}
+
+	public int getVertexCount (int page) {
+		return idx[page];
 	}
 
 	public Array<GlyphLayout> getLayouts () {

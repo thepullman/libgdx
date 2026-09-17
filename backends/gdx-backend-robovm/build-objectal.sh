@@ -1,17 +1,27 @@
 #!/bin/bash
-curl https://codeload.github.com/kstenerud/ObjectAL-for-iPhone/legacy.tar.gz/master -o objectal.tar.gz
-tar xvfz objectal.tar.gz
-cd kstenerud-ObjectAL-for-iPhone-a2252f3/ObjectAL
-xcodebuild -arch armv7 -sdk iphoneos
-cp build/Release-iphoneos/libObjectAl.a build/libObjectAl.a.armv7
-xcodebuild -arch arm64 -sdk iphoneos
-cp build/Release-iphoneos/libObjectAl.a build/libObjectAl.a.arm64
-xcodebuild -arch i386 -sdk iphonesimulator
-cp build/Release-iphonesimulator/libObjectAl.a build/libObjectAl.a.i386
-xcodebuild -arch x86_64 -sdk iphonesimulator
-cp build/Release-iphonesimulator/libObjectAl.a build/libObjectAl.a.x86_64
-lipo build/libObjectAL.a.armv7 build/libObjectAL.a.arm64 build/libObjectAL.a.i386 build/libObjectAL.a.x86_64 -create -output build/libObjectAL.a
-cp build/libObjectAL.a ../../../../gdx/libs/ios32/
-cd ../..
-rm objectal.tar.gz
-rm -r kstenerud-ObjectAL-for-iPhone-a2252f3/
+set -e
+BASE=$(cd $(dirname $0); pwd -P)
+
+BUILD_DIR=$BASE/build/objectal
+
+rm -rf $BUILD_DIR
+mkdir -p $BUILD_DIR
+
+curl https://codeload.github.com/libgdx/ObjectAL-for-iPhone/legacy.tar.gz/master -o $BUILD_DIR/objectal.tar.gz
+
+tar xvfz $BUILD_DIR/objectal.tar.gz -C $BUILD_DIR --strip-components 1
+
+XCODEPROJ=$BUILD_DIR/ObjectAL/ObjectAL.xcodeproj
+
+xcodebuild -project $XCODEPROJ -arch arm64 -sdk iphoneos -target "ObjectAL-iOS-Framework" CONFIGURATION_BUILD_DIR=$BUILD_DIR/device
+xcodebuild -project $XCODEPROJ -arch x86_64 -arch arm64 -sdk iphonesimulator -target "ObjectAL-iOS-Framework" CONFIGURATION_BUILD_DIR=$BUILD_DIR/simulator
+
+xcodebuild -create-xcframework \
+           -framework $BUILD_DIR/device/ObjectAL.framework \
+           -debug-symbols $BUILD_DIR/device/ObjectAL.framework.dSYM \
+           -framework $BUILD_DIR/simulator/ObjectAL.framework \
+           -debug-symbols $BUILD_DIR/simulator/ObjectAL.framework.dSYM \
+           -output $BUILD_DIR/ObjectAL.xcframework
+
+mkdir -p $BASE/../../gdx/libs/ios32/
+cp -r $BUILD_DIR/ObjectAL.xcframework $BASE/../../gdx/libs/ios32/

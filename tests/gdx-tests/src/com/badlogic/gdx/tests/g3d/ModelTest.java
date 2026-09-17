@@ -26,12 +26,10 @@ import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.model.Animation;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController;
-import com.badlogic.gdx.math.Quaternion;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ObjectMap;
-import com.badlogic.gdx.utils.StringBuilder;
 
 public class ModelTest extends BaseG3dHudTest {
 	protected Environment environment;
@@ -54,7 +52,6 @@ public class ModelTest extends BaseG3dHudTest {
 	}
 
 	private final Vector3 tmpV1 = new Vector3(), tmpV2 = new Vector3();
-	private final Quaternion tmpQ = new Quaternion();
 	private final BoundingBox bounds = new BoundingBox();
 
 	@Override

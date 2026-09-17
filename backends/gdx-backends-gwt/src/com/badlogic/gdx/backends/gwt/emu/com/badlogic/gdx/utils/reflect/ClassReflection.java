@@ -30,7 +30,7 @@ public final class ClassReflection {
 		try {
 			return ReflectionCache.forName(name).getClassOfType();
 		} catch (ClassNotFoundException e) {
-			throw new ReflectionException("Class not found: " + name);
+			throw new ReflectionException("Class not found: " + name, e);
 		}
 	}
 
@@ -66,7 +66,32 @@ public final class ClassReflection {
 	static public boolean isArray (Class c) {
 		return ReflectionCache.getType(c).isArray();
 	}
-	
+
+	/** Determines if the supplied Class object represents a primitive type. */
+	static public boolean isPrimitive (Class c) {
+		return ReflectionCache.getType(c).isPrimitive();
+	}
+
+	/** Determines if the supplied Class object represents an enum type. */
+	static public boolean isEnum (Class c) {
+		return ReflectionCache.getType(c).isEnum();
+	}
+
+	/** Determines if the supplied Class object represents an annotation type. */
+	static public boolean isAnnotation (Class c) {
+		return ReflectionCache.getType(c).isAnnotation();
+	}
+
+	/** Determines if the supplied Class object represents an interface type. */
+	static public boolean isInterface (Class c) {
+		return ReflectionCache.getType(c).isInterface();
+	}
+
+	/** Determines if the supplied Class object represents an abstract type. */
+	static public boolean isAbstract (Class c) {
+		return ReflectionCache.getType(c).isAbstract();
+	}
+
 	/** Creates a new instance of the class represented by the supplied Class. */
 	static public <T> T newInstance (Class<T> c) throws ReflectionException {
 		try {
@@ -76,7 +101,14 @@ public final class ClassReflection {
 		}
 	}
 
-	/** Returns an array of {@link Constructor} containing the public constructors of the class represented by the supplied Class. */
+	/** Returns the Class representing the component type of an array. If this class does not represent an array class this method
+	 * returns null. */
+	static public Class getComponentType (Class c) {
+		return ReflectionCache.getType(c).getComponentType();
+	}
+
+	/** Returns an array of {@link Constructor} containing the public constructors of the class represented by the supplied
+	 * Class. */
 	static public Constructor[] getConstructors (Class c) {
 		com.badlogic.gwtref.client.Constructor[] constructors = ReflectionCache.getType(c).getConstructors();
 		Constructor[] result = new Constructor[constructors.length];
@@ -108,6 +140,11 @@ public final class ClassReflection {
 		} catch (NoSuchMethodException e) {
 			throw new ReflectionException("Constructor not found for class: " + c.getName(), e);
 		}
+	}
+
+	/** Returns the elements of this enum class or null if this Class object does not represent an enum type. */
+	static public Object[] getEnumConstants (Class c) {
+		return ReflectionCache.getType(c).getEnumConstants();
 	}
 
 	/** Returns an array of {@link Method} containing the public member methods of the class represented by the supplied Class. */
@@ -142,10 +179,11 @@ public final class ClassReflection {
 		return result;
 	}
 
-	/** Returns a {@link Method} that represents the method declared by the supplied class which takes the supplied parameter types. */
+	/** Returns a {@link Method} that represents the method declared by the supplied class which takes the supplied parameter
+	 * types. */
 	static public Method getDeclaredMethod (Class c, String name, Class... parameterTypes) throws ReflectionException {
 		try {
-			return new Method(ReflectionCache.getType(c).getMethod(name, parameterTypes));
+			return new Method(ReflectionCache.getType(c).getDeclaredMethod(name, parameterTypes));
 		} catch (SecurityException e) {
 			throw new ReflectionException("Security violation while getting method: " + name + ", for class: " + c.getName(), e);
 		} catch (NoSuchMethodException e) {
@@ -169,6 +207,8 @@ public final class ClassReflection {
 			return new Field(ReflectionCache.getType(c).getField(name));
 		} catch (SecurityException e) {
 			throw new ReflectionException("Security violation while getting field: " + name + ", for class: " + c.getName(), e);
+		} catch (NoSuchFieldException e) {
+			throw new ReflectionException("Field not found: " + name + ", for class: " + c.getName(), e);
 		}
 	}
 
@@ -185,10 +225,13 @@ public final class ClassReflection {
 	/** Returns a {@link Field} that represents the specified declared field for the supplied class. */
 	static public Field getDeclaredField (Class c, String name) throws ReflectionException {
 		try {
-			return new Field(ReflectionCache.getType(c).getField(name));
+			return new Field(ReflectionCache.getType(c).getDeclaredField(name));
 		} catch (SecurityException e) {
 			throw new ReflectionException("Security violation while getting field: " + name + ", for class: " + c.getName(), e);
+		} catch (NoSuchFieldException e) {
+			throw new ReflectionException("Field not found: " + name + ", for class: " + c.getName(), e);
 		}
+
 	}
 
 	/** Returns true if the supplied class has an annotation of the given type. */
@@ -257,8 +300,8 @@ public final class ClassReflection {
 		return null;
 	}
 
-	/** Returns an array of {@link Annotation} objects reflecting all annotations declared by the supplied class, or an empty
-	 * array if there are none. Does not include inherited annotations. */
+	/** Returns an array of {@link Annotation} objects reflecting all annotations declared by the supplied class, or an empty array
+	 * if there are none. Does not include inherited annotations. */
 	static public Annotation[] getDeclaredAnnotations (Class c) {
 		java.lang.annotation.Annotation[] annotations = ReflectionCache.getType(c).getDeclaredAnnotations();
 		Annotation[] result = new Annotation[annotations.length];
@@ -274,5 +317,9 @@ public final class ClassReflection {
 		java.lang.annotation.Annotation annotation = ReflectionCache.getType(c).getDeclaredAnnotation(annotationType);
 		if (annotation != null) return new Annotation(annotation);
 		return null;
+	}
+
+	static public Class[] getInterfaces (Class c) {
+		return ReflectionCache.getType(c).getInterfaces();
 	}
 }

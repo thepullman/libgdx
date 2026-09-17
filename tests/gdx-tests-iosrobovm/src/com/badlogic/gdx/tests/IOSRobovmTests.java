@@ -17,23 +17,28 @@
 package com.badlogic.gdx.tests;
 
 import org.robovm.apple.foundation.NSAutoreleasePool;
-import org.robovm.apple.uikit.UIApplication;
+import org.robovm.apple.uikit.*;
 
 import com.badlogic.gdx.backends.iosrobovm.IOSApplication;
 import com.badlogic.gdx.backends.iosrobovm.IOSApplicationConfiguration;
 
 public class IOSRobovmTests extends IOSApplication.Delegate {
-	
+
 	@Override
-	protected IOSApplication createApplication() {
+	protected IOSApplication createApplication () {
 		IOSApplicationConfiguration config = new IOSApplicationConfiguration();
-		config.useAccelerometer = false;
-		return new IOSApplication(new AccelerometerTest(), config);
+		config.useHaptics = true;
+		return new IOSApplication(new IosTestWrapper(), config);
 	}
 
-	public static void main(String[] argv) {
+	public static void main (String[] argv) {
 		NSAutoreleasePool pool = new NSAutoreleasePool();
-		UIApplication.main(argv, null, IOSRobovmTests.class);		
+		UIApplication.main(argv, null, IOSRobovmTests.class);
 		pool.close();
+	}
+
+	@Override
+	public boolean didFinishLaunching (UIApplication application, UIApplicationLaunchOptions launchOptions) {
+		return super.didFinishLaunching(application, launchOptions);
 	}
 }

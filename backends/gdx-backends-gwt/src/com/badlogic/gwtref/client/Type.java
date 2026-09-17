@@ -32,12 +32,14 @@ public class Type {
 	private static final Constructor[] EMPTY_CONSTRUCTORS = new Constructor[0];
 	private static final Annotation[] EMPTY_ANNOTATIONS = new Annotation[0];
 	private static final Set<Class> EMPTY_ASSIGNABLES = Collections.unmodifiableSet(new HashSet<Class>());
+	private static final Set<Class> EMPTY_INTERFACES = Collections.unmodifiableSet(new HashSet<Class>());
 
 	final String name;
 	final int id;
 	final Class clazz;
 	final CachedTypeLookup superClass;
 	final Set<Class> assignables;
+	final Set<Class> interfaces;
 	boolean isAbstract;
 	boolean isInterface;
 	boolean isPrimitive;
@@ -54,16 +56,18 @@ public class Type {
 
 	Class componentType;
 	Object[] enumConstants;
+	IReflectionCache source;
 
 	private Field[] allFields;
 	private Method[] allMethods;
 
-	public Type (String name, int id, Class clazz, Class superClass, Set<Class> assignables) {
+	public Type (String name, int id, Class clazz, Class superClass, Set<Class> assignables, Set<Class> interfaces) {
 		this.name = name;
 		this.id = id;
 		this.clazz = clazz;
 		this.superClass = new CachedTypeLookup(superClass);
 		this.assignables = assignables != null ? assignables : EMPTY_ASSIGNABLES;
+		this.interfaces = interfaces != null ? interfaces : EMPTY_INTERFACES;
 	}
 
 	/** @return a new instance of this type created via the default constructor which must be public. */
@@ -93,14 +97,19 @@ public class Type {
 			|| otherType.assignables.contains(clazz);
 	}
 
+	public Class[] getInterfaces () {
+		return interfaces.toArray(new Class[this.interfaces.size()]);
+	}
+
 	/** @param name the name of the field
-	 * @return the public field of this type or one of its super interfaces with the given name or null. See
-	 *         {@link Class#getField(String)}. */
-	public Field getField (String name) {
+	 * @return the public field of this type or one of its super interfaces with the given name. See
+	 *         {@link Class#getField(String)}.
+	 * @throws NoSuchFieldException */
+	public Field getField (String name) throws NoSuchFieldException {
 		for (Field f : getFields()) {
 			if (f.name.equals(name)) return f;
 		}
-		return null;
+		throw new NoSuchFieldException();
 	}
 
 	/** @return an array containing all the public fields of this class and its super classes. See {@link Class#getFields()}. */
@@ -117,6 +126,16 @@ public class Type {
 			allFields = allFieldsList.toArray(new Field[allFieldsList.size()]);
 		}
 		return allFields;
+	}
+
+	/** @param name the name of the field
+	 * @return the declared field of this type. See {@link Class#getDeclaredField(String)}.
+	 * @throws NoSuchFieldException */
+	public Field getDeclaredField (String name) throws NoSuchFieldException {
+		for (Field f : getDeclaredFields()) {
+			if (f.name.equals(name)) return f;
+		}
+		throw new NoSuchFieldException();
 	}
 
 	/** @return an array containing all the fields of this class, including private and protected fields. See
@@ -150,6 +169,17 @@ public class Type {
 			allMethods = allMethodsList.toArray(new Method[allMethodsList.size()]);
 		}
 		return allMethods;
+	}
+
+	/** @param name the name of the method
+	 * @param parameterTypes the types of the parameters of the method
+	 * @return the declared method that matches the name and parameter types of this type.
+	 * @throws NoSuchMethodException */
+	public Method getDeclaredMethod (String name, Class... parameterTypes) throws NoSuchMethodException {
+		for (Method m : getDeclaredMethods()) {
+			if (m.match(name, parameterTypes)) return m;
+		}
+		throw new NoSuchMethodException();
 	}
 
 	/** @return an array containing all methods of this class, including abstract, private and protected methods. See
@@ -248,7 +278,7 @@ public class Type {
 		}
 		return null;
 	}
-	
+
 	@Override
 	public String toString () {
 		return "Type [name=" + name + ",\n clazz=" + clazz + ",\n superClass=" + superClass + ",\n assignables=" + assignables

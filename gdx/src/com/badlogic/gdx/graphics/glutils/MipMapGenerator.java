@@ -60,14 +60,16 @@ public class MipMapGenerator {
 	}
 
 	private static void generateMipMapGLES20 (int target, Pixmap pixmap) {
-		Gdx.gl.glTexImage2D(target, 0, pixmap.getGLInternalFormat(), pixmap.getWidth(), pixmap.getHeight(), 0,
-			pixmap.getGLFormat(), pixmap.getGLType(), pixmap.getPixels());
+		Gdx.gl.glTexImage2D(target, 0, pixmap.getGLInternalFormat(), pixmap.getWidth(), pixmap.getHeight(), 0, pixmap.getGLFormat(),
+			pixmap.getGLType(), pixmap.getPixels());
 		Gdx.gl20.glGenerateMipmap(target);
 	}
 
 	private static void generateMipMapDesktop (int target, Pixmap pixmap, int textureWidth, int textureHeight) {
 		if (Gdx.graphics.supportsExtension("GL_ARB_framebuffer_object")
-			|| Gdx.graphics.supportsExtension("GL_EXT_framebuffer_object") || Gdx.gl30 != null) {
+			|| Gdx.graphics.supportsExtension("GL_EXT_framebuffer_object")
+			|| Gdx.gl20.getClass().getName().equals("com.badlogic.gdx.backends.lwjgl3.angle.Lwjgl3GLES20") // LWJGL3ANGLE
+			|| Gdx.gl30 != null) {
 			Gdx.gl.glTexImage2D(target, 0, pixmap.getGLInternalFormat(), pixmap.getWidth(), pixmap.getHeight(), 0,
 				pixmap.getGLFormat(), pixmap.getGLType(), pixmap.getPixels());
 			Gdx.gl20.glGenerateMipmap(target);
@@ -77,17 +79,18 @@ public class MipMapGenerator {
 	}
 
 	private static void generateMipMapCPU (int target, Pixmap pixmap, int textureWidth, int textureHeight) {
-		Gdx.gl.glTexImage2D(target, 0, pixmap.getGLInternalFormat(), pixmap.getWidth(), pixmap.getHeight(), 0,
-			pixmap.getGLFormat(), pixmap.getGLType(), pixmap.getPixels());
+		Gdx.gl.glTexImage2D(target, 0, pixmap.getGLInternalFormat(), pixmap.getWidth(), pixmap.getHeight(), 0, pixmap.getGLFormat(),
+			pixmap.getGLType(), pixmap.getPixels());
 		if ((Gdx.gl20 == null) && textureWidth != textureHeight)
 			throw new GdxRuntimeException("texture width and height must be square when using mipmapping.");
 		int width = pixmap.getWidth() / 2;
 		int height = pixmap.getHeight() / 2;
 		int level = 1;
-		Blending blending = Pixmap.getBlending();
-		Pixmap.setBlending(Blending.None);
-		while (width > 0 && height > 0) {
+
+		// Since we are building the entire chain anyway
+		while (true) {
 			Pixmap tmp = new Pixmap(width, height, pixmap.getFormat());
+			tmp.setBlending(Blending.None);
 			tmp.drawPixmap(pixmap, 0, 0, pixmap.getWidth(), pixmap.getHeight(), 0, 0, width, height);
 			if (level > 1) pixmap.dispose();
 			pixmap = tmp;
@@ -97,8 +100,15 @@ public class MipMapGenerator {
 
 			width = pixmap.getWidth() / 2;
 			height = pixmap.getHeight() / 2;
+
+			// Break when we have exhausted all levels
+			if (width == 0 && height == 0) {
+				break;
+			}
+			if (width == 0) width = 1;
+			if (height == 0) height = 1;
+
 			level++;
 		}
-		Pixmap.setBlending(blending);
 	}
 }

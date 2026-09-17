@@ -2,7 +2,6 @@
 package com.badlogic.gdx.tests.g3d;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -15,9 +14,6 @@ import com.badlogic.gdx.graphics.g3d.Renderable;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
-import com.badlogic.gdx.graphics.g3d.shaders.DefaultShader;
-import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.utils.Array;
 
 /** Simple test showing how to use a height map. Uses {@link HeightField}.
@@ -55,14 +51,12 @@ public class HeightMapTest extends BaseG3dTest {
 
 		ground = new Renderable();
 		ground.environment = environment;
-		ground.mesh = field.mesh;
-		ground.primitiveType = GL20.GL_TRIANGLES;
-		ground.meshPartOffset = 0;
-		ground.meshPartSize = field.mesh.getNumIndices();
+		ground.meshPart.mesh = field.mesh;
+		ground.meshPart.primitiveType = GL20.GL_TRIANGLES;
+		ground.meshPart.offset = 0;
+		ground.meshPart.size = field.mesh.getNumIndices();
+		ground.meshPart.update();
 		ground.material = new Material(TextureAttribute.createDiffuse(texture));
-
-		BoundingBox bb = field.mesh.calculateBoundingBox();
-		Gdx.app.log("BB", bb.toString());
 	}
 
 	@Override
@@ -70,7 +64,7 @@ public class HeightMapTest extends BaseG3dTest {
 		batch.render(instances);
 		batch.render(ground);
 	}
-	
+
 	@Override
 	public void dispose () {
 		super.dispose();

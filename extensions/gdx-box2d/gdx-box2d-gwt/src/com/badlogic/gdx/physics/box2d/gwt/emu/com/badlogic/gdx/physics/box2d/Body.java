@@ -32,7 +32,7 @@ public class Body {
 	final Array<Fixture> fixtures = new Array<Fixture>();
 	final Array<JointEdge> joints = new Array<JointEdge>();
 
-	/** Constructs a new body with the given address
+	/** Constructs a new body with the given address.
 	 * @param world the world
 	 * @param addr the address */
 	protected Body (World world, org.jbox2d.dynamics.Body body) {
@@ -172,8 +172,8 @@ public class Body {
 		body.applyForceToCenter(tmp);
 	}
 
-	/** Apply a torque. This affects the angular velocity without affecting the linear velocity of the center of mass. This wakes up
-	 * the body.
+	/** Apply a torque. This affects the angular velocity without affecting the linear velocity of the center of mass. This wakes
+	 * up the body.
 	 * @param torque about the z-axis (out of the screen), usually in N-m. */
 	public void applyTorque (float torque, boolean wake) {
 		body.applyTorque(torque);
@@ -232,8 +232,9 @@ public class Body {
 		return massData;
 	}
 
-	/** Set the mass properties to override the mass properties of the fixtures. Note that this changes the center of mass position.
-	 * Note that creating or destroying fixtures can also alter the mass. This function has no effect if the body isn't dynamic.
+	/** Set the mass properties to override the mass properties of the fixtures. Note that this changes the center of mass
+	 * position. Note that creating or destroying fixtures can also alter the mass. This function has no effect if the body isn't
+	 * dynamic.
 	 * @param data the mass properties. */
 	public void setMassData (MassData data) {
 		massData2.center.set(data.center.x, data.center.y);
@@ -251,7 +252,7 @@ public class Body {
 	private final Vector2 worldPoint = new Vector2();
 
 	/** Get the world coordinates of a point given the local coordinates.
-	 * @param localPoint a point on the body measured relative the the body's origin.
+	 * @param localPoint a point on the body measured relative to the the body's origin.
 	 * @return the same point expressed in world coordinates. */
 	public Vector2 getWorldPoint (Vector2 localPoint) {
 		tmp.set(localPoint.x, localPoint.y);
@@ -367,7 +368,7 @@ public class Body {
 		body.setSleepingAllowed(flag);
 	}
 
-	/** Is this body allowed to sleep */
+	/** Is this body allowed to sleep? */
 	public boolean isSleepingAllowed () {
 		return body.isSleepingAllowed();
 	}
@@ -471,7 +472,7 @@ public class Body {
 		return body.getGravityScale();
 	}
 
-	/** Sets the gravity scale of the body */
+	/** Set the gravity scale of the body */
 	public void setGravityScale (float scale) {
 		body.setGravityScale(scale);
 	}

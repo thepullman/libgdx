@@ -33,16 +33,14 @@ import java.util.Map.Entry;
 import java.util.Properties;
 
 public class HeadlessPreferences implements Preferences {
-	private final String name;
 	private final Properties properties = new Properties();
 	private final FileHandle file;
 
-	public HeadlessPreferences(String name, String directory) {
+	public HeadlessPreferences (String name, String directory) {
 		this(new HeadlessFileHandle(new File(directory, name), FileType.External));
 	}
 
-	public HeadlessPreferences(FileHandle file) {
-		this.name = file.name();
+	public HeadlessPreferences (FileHandle file) {
 		this.file = file;
 		if (!file.exists()) return;
 		InputStream in = null;

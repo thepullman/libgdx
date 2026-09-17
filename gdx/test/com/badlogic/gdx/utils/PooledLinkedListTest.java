@@ -1,3 +1,4 @@
+
 package com.badlogic.gdx.utils;
 
 import static org.junit.Assert.*;
@@ -53,6 +54,15 @@ public class PooledLinkedListTest {
 		list.next(); // 3
 		list.remove();
 		list.iter();
+		assertEquals(Integer.valueOf(2), list.next());
+		assertNull(list.next());
+	}
+
+	@Test
+	public void removeLast () {
+		list.iter();
+		assertEquals(Integer.valueOf(1), list.next());
+		list.removeLast();
 		assertEquals(Integer.valueOf(2), list.next());
 		assertNull(list.next());
 	}

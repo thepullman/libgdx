@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright 2011 See AUTHORS file.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,6 +27,7 @@ import com.badlogic.gdx.assets.loaders.AssetLoader;
 import com.badlogic.gdx.assets.loaders.TextureLoader.TextureParameter;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Pixmap.Format;
+import com.badlogic.gdx.graphics.glutils.FileTextureData;
 import com.badlogic.gdx.graphics.glutils.PixmapTextureData;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.GdxRuntimeException;
@@ -49,9 +50,30 @@ public class Texture extends GLTexture {
 	final static Map<Application, Array<Texture>> managedTextures = new HashMap<Application, Array<Texture>>();
 
 	public enum TextureFilter {
-		Nearest(GL20.GL_NEAREST), Linear(GL20.GL_LINEAR), MipMap(GL20.GL_LINEAR_MIPMAP_LINEAR), MipMapNearestNearest(
-			GL20.GL_NEAREST_MIPMAP_NEAREST), MipMapLinearNearest(GL20.GL_LINEAR_MIPMAP_NEAREST), MipMapNearestLinear(
-			GL20.GL_NEAREST_MIPMAP_LINEAR), MipMapLinearLinear(GL20.GL_LINEAR_MIPMAP_LINEAR);
+		/** Fetch the nearest texel that best maps to the pixel on screen. */
+		Nearest(GL20.GL_NEAREST),
+
+		/** Fetch four nearest texels that best maps to the pixel on screen. */
+		Linear(GL20.GL_LINEAR),
+
+		/** @see TextureFilter#MipMapLinearLinear */
+		MipMap(GL20.GL_LINEAR_MIPMAP_LINEAR),
+
+		/** Fetch the best fitting image from the mip map chain based on the pixel/texel ratio and then sample the texels with a
+		 * nearest filter. */
+		MipMapNearestNearest(GL20.GL_NEAREST_MIPMAP_NEAREST),
+
+		/** Fetch the best fitting image from the mip map chain based on the pixel/texel ratio and then sample the texels with a
+		 * linear filter. */
+		MipMapLinearNearest(GL20.GL_LINEAR_MIPMAP_NEAREST),
+
+		/** Fetch the two best fitting images from the mip map chain and then sample the nearest texel from each of the two images,
+		 * combining them to the final output pixel. */
+		MipMapNearestLinear(GL20.GL_NEAREST_MIPMAP_LINEAR),
+
+		/** Fetch the two best fitting images from the mip map chain and then sample the four nearest texels from each of the two
+		 * images, combining them to the final output pixel. */
+		MipMapLinearLinear(GL20.GL_LINEAR_MIPMAP_LINEAR);
 
 		final int glEnum;
 
@@ -83,6 +105,10 @@ public class Texture extends GLTexture {
 	}
 
 	TextureData data;
+
+	protected Texture () {
+		super(0, 0);
+	}
 
 	public Texture (String internalPath) {
 		this(Gdx.files.internal(internalPath));
@@ -117,11 +143,15 @@ public class Texture extends GLTexture {
 	}
 
 	public Texture (TextureData data) {
-		super(GL20.GL_TEXTURE_2D, Gdx.gl.glGenTexture());
+		this(GL20.GL_TEXTURE_2D, Gdx.gl.glGenTexture(), data);
+	}
+
+	protected Texture (int glTarget, int glHandle, TextureData data) {
+		super(glTarget, glHandle);
 		load(data);
 		if (data.isManaged()) addManagedTexture(Gdx.app, this);
 	}
-	
+
 	public void load (TextureData data) {
 		if (this.data != null && data.isManaged() != this.data.isManaged())
 			throw new GdxRuntimeException("New data must have the same managed status as the old data");
@@ -132,8 +162,9 @@ public class Texture extends GLTexture {
 		bind();
 		uploadImageData(GL20.GL_TEXTURE_2D, data);
 
-		setFilter(minFilter, magFilter);
-		setWrap(uWrap, vWrap);
+		unsafeSetFilter(minFilter, magFilter, true);
+		unsafeSetWrap(uWrap, vWrap, true);
+		unsafeSetAnisotropicFilter(anisotropicFilterLevel, true);
 		Gdx.gl.glBindTexture(glTarget, 0);
 	}
 
@@ -148,7 +179,7 @@ public class Texture extends GLTexture {
 
 	/** Draws the given {@link Pixmap} to the texture at position x, y. No clipping is performed so you have to make sure that you
 	 * draw only inside the texture region. Note that this will only draw to mipmap level 0!
-	 * 
+	 *
 	 * @param pixmap The Pixmap
 	 * @param x The x coordinate in pixels
 	 * @param y The y coordinate in pixels */
@@ -193,6 +224,11 @@ public class Texture extends GLTexture {
 		if (glHandle == 0) return;
 		delete();
 		if (data.isManaged()) if (managedTextures.get(Gdx.app) != null) managedTextures.get(Gdx.app).removeValue(this, true);
+	}
+
+	public String toString () {
+		if (data instanceof FileTextureData) return data.toString();
+		return super.toString();
 	}
 
 	private static void addManagedTexture (Application app, Texture texture) {

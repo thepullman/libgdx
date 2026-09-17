@@ -16,12 +16,6 @@
 
 package com.badlogic.gdx.backends.android;
 
-import java.lang.reflect.Method;
-import java.util.Arrays;
-
-import javax.microedition.khronos.opengles.GL10;
-import javax.microedition.khronos.opengles.GL11;
-
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
@@ -30,50 +24,39 @@ import android.os.Debug;
 import android.os.Handler;
 import android.os.Looper;
 import android.service.dreams.DreamService;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
-
-import com.badlogic.gdx.Application;
-import com.badlogic.gdx.ApplicationListener;
-import com.badlogic.gdx.Audio;
-import com.badlogic.gdx.Files;
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Graphics;
-import com.badlogic.gdx.Input;
-import com.badlogic.gdx.LifecycleListener;
-import com.badlogic.gdx.Net;
-import com.badlogic.gdx.Preferences;
+import com.badlogic.gdx.*;
 import com.badlogic.gdx.backends.android.surfaceview.FillResolutionStrategy;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Clipboard;
 import com.badlogic.gdx.utils.GdxNativesLoader;
+import com.badlogic.gdx.utils.SnapshotArray;
 
-/** An implementation of the {@link Application} interface for Android. Create an {@link Activity} that derives from this class. In
- * the Activity#onCreate(Bundle) method call the {@link #initialize(ApplicationListener)} method specifying the configuration for
- * the {@link GLSurfaceView}.
+/** An implementation of the {@link Application} interface for Android. Create an {@link Activity} that derives from this class.
+ * In the Activity#onCreate(Bundle) method call the {@link #initialize(ApplicationListener)} method specifying the configuration
+ * for the {@link GLSurfaceView}.
  * 
  * @author mzechner */
 public class AndroidDaydream extends DreamService implements AndroidApplicationBase {
-	static {
-		GdxNativesLoader.load();
-	}
 
 	protected AndroidGraphics graphics;
 	protected AndroidInput input;
 	protected AndroidAudio audio;
 	protected AndroidFiles files;
 	protected AndroidNet net;
+	protected AndroidClipboard clipboard;
 	protected ApplicationListener listener;
 	protected Handler handler;
 	protected boolean firstResume = true;
 	protected final Array<Runnable> runnables = new Array<Runnable>();
 	protected final Array<Runnable> executedRunnables = new Array<Runnable>();
-	protected final Array<LifecycleListener> lifecycleListeners = new Array<LifecycleListener>();
+	protected final SnapshotArray<LifecycleListener> lifecycleListeners = new SnapshotArray<>(LifecycleListener[]::new);
 	protected int logLevel = LOG_INFO;
+	protected ApplicationLogger applicationLogger;
 
 	/** This method has to be called in the Activity#onCreate(Bundle) method. It sets up all the things necessary to get input,
 	 * render via OpenGL and so on. Uses a default {@link AndroidApplicationConfiguration}.
@@ -119,15 +102,17 @@ public class AndroidDaydream extends DreamService implements AndroidApplicationB
 	}
 
 	private void init (ApplicationListener listener, AndroidApplicationConfiguration config, boolean isForView) {
-		graphics = new AndroidGraphics(this, config, config.resolutionStrategy == null ? new FillResolutionStrategy()
-			: config.resolutionStrategy);
-		input = AndroidInputFactory.newAndroidInput(this, this, graphics.view, config);
-		audio = new AndroidAudio(this, config);
-		this.getFilesDir(); // workaround for Android bug #10515463
-		files = new AndroidFiles(this.getAssets(), this.getFilesDir().getAbsolutePath());
-		net = new AndroidNet(this);
+		GdxNativesLoader.load();
+		setApplicationLogger(new AndroidApplicationLogger());
+		graphics = new AndroidGraphics(this, config,
+			config.resolutionStrategy == null ? new FillResolutionStrategy() : config.resolutionStrategy);
+		input = createInput(this, this, graphics.view, config);
+		audio = createAudio(this, config);
+		files = createFiles();
+		net = new AndroidNet(this, config);
 		this.listener = listener;
 		this.handler = new Handler();
+		this.clipboard = new AndroidClipboard(this);
 
 		// Add a specialized audio lifecycle listener
 		addLifecycleListener(new LifecycleListener() {
@@ -136,12 +121,12 @@ public class AndroidDaydream extends DreamService implements AndroidApplicationB
 			public void resume () {
 				audio.resume();
 			}
-			
+
 			@Override
 			public void pause () {
 				audio.pause();
 			}
-			
+
 			@Override
 			public void dispose () {
 				audio.dispose();
@@ -162,7 +147,9 @@ public class AndroidDaydream extends DreamService implements AndroidApplicationB
 		}
 
 		createWakeLock(config.useWakelock);
-		hideStatusBar(config);
+
+		// detect an already connected bluetooth keyboardAvailable
+		if (getResources().getConfiguration().keyboard != Configuration.KEYBOARD_NOKEYS) input.setKeyboardAvailable(true);
 	}
 
 	protected FrameLayout.LayoutParams createLayoutParams () {
@@ -178,34 +165,14 @@ public class AndroidDaydream extends DreamService implements AndroidApplicationB
 		}
 	}
 
-	protected void hideStatusBar (AndroidApplicationConfiguration config) {
-		if (!config.hideStatusBar || getVersion() < 11) return;
-
-		View rootView = getWindow().getDecorView();
-
-		try {
-			Method m = View.class.getMethod("setSystemUiVisibility", int.class);
-			m.invoke(rootView, 0x0);
-			m.invoke(rootView, 0x1);
-		} catch (Exception e) {
-			log("AndroidApplication", "Can't hide status bar", e);
-		}
-	}
-
 	@Override
 	public void onDreamingStopped () {
 		boolean isContinuous = graphics.isContinuousRendering();
 		graphics.setContinuousRendering(true);
 		graphics.pause();
 
-		input.unregisterSensorListeners();
+		input.onDreamingStopped();
 
-		int[] realId = input.realId;
-		// erase pointer ids. this sucks donkeyballs...
-		Arrays.fill(realId, -1);
-		boolean[] touched = input.touched;
-		// erase touched state. this also sucks donkeyballs...
-		Arrays.fill(touched, false);
 		graphics.clearManagedCaches();
 		graphics.destroy();
 		graphics.setContinuousRendering(isContinuous);
@@ -224,7 +191,7 @@ public class AndroidDaydream extends DreamService implements AndroidApplicationB
 		Gdx.graphics = this.getGraphics();
 		Gdx.net = this.getNet();
 
-		getInput().registerSensorListeners();
+		input.onDreamingStarted();
 
 		if (graphics != null) {
 			graphics.onResumeGLSurfaceView();
@@ -297,13 +264,8 @@ public class AndroidDaydream extends DreamService implements AndroidApplicationB
 		return new AndroidPreferences(getSharedPreferences(name, Context.MODE_PRIVATE));
 	}
 
-	AndroidClipboard clipboard;
-
 	@Override
 	public Clipboard getClipboard () {
-		if (clipboard == null) {
-			clipboard = new AndroidClipboard(this);
-		}
 		return clipboard;
 	}
 
@@ -320,7 +282,9 @@ public class AndroidDaydream extends DreamService implements AndroidApplicationB
 		super.onConfigurationChanged(config);
 		boolean keyboardAvailable = false;
 		if (config.hardKeyboardHidden == Configuration.HARDKEYBOARDHIDDEN_NO) keyboardAvailable = true;
-		input.keyboardAvailable = keyboardAvailable;
+		if (input != null) {
+			input.setKeyboardAvailable(keyboardAvailable);
+		}
 	}
 
 	@Override
@@ -335,36 +299,32 @@ public class AndroidDaydream extends DreamService implements AndroidApplicationB
 
 	@Override
 	public void debug (String tag, String message) {
-		if (logLevel >= LOG_DEBUG) {
-			Log.d(tag, message);
-		}
+		if (logLevel >= LOG_DEBUG) getApplicationLogger().debug(tag, message);
 	}
 
 	@Override
 	public void debug (String tag, String message, Throwable exception) {
-		if (logLevel >= LOG_DEBUG) {
-			Log.d(tag, message, exception);
-		}
+		if (logLevel >= LOG_DEBUG) getApplicationLogger().debug(tag, message, exception);
 	}
 
 	@Override
 	public void log (String tag, String message) {
-		if (logLevel >= LOG_INFO) Log.i(tag, message);
+		if (logLevel >= LOG_INFO) getApplicationLogger().log(tag, message);
 	}
 
 	@Override
 	public void log (String tag, String message, Throwable exception) {
-		if (logLevel >= LOG_INFO) Log.i(tag, message, exception);
+		if (logLevel >= LOG_INFO) getApplicationLogger().log(tag, message, exception);
 	}
 
 	@Override
 	public void error (String tag, String message) {
-		if (logLevel >= LOG_ERROR) Log.e(tag, message);
+		if (logLevel >= LOG_ERROR) getApplicationLogger().error(tag, message);
 	}
 
 	@Override
 	public void error (String tag, String message, Throwable exception) {
-		if (logLevel >= LOG_ERROR) Log.e(tag, message, exception);
+		if (logLevel >= LOG_ERROR) getApplicationLogger().error(tag, message, exception);
 	}
 
 	@Override
@@ -375,6 +335,16 @@ public class AndroidDaydream extends DreamService implements AndroidApplicationB
 	@Override
 	public int getLogLevel () {
 		return logLevel;
+	}
+
+	@Override
+	public void setApplicationLogger (ApplicationLogger applicationLogger) {
+		this.applicationLogger = applicationLogger;
+	}
+
+	@Override
+	public ApplicationLogger getApplicationLogger () {
+		return applicationLogger;
 	}
 
 	@Override
@@ -407,7 +377,7 @@ public class AndroidDaydream extends DreamService implements AndroidApplicationB
 	}
 
 	@Override
-	public Array<LifecycleListener> getLifecycleListeners () {
+	public SnapshotArray<LifecycleListener> getLifecycleListeners () {
 		return lifecycleListeners;
 	}
 
@@ -419,6 +389,24 @@ public class AndroidDaydream extends DreamService implements AndroidApplicationB
 	@Override
 	public Handler getHandler () {
 		return this.handler;
+	}
+
+	@Override
+	public AndroidAudio createAudio (Context context, AndroidApplicationConfiguration config) {
+		if (!config.disableAudio)
+			return new DefaultAndroidAudio(context, config);
+		else
+			return new DisabledAndroidAudio();
+	}
+
+	@Override
+	public AndroidInput createInput (Application activity, Context context, Object view, AndroidApplicationConfiguration config) {
+		return new DefaultAndroidInput(this, this, graphics.view, config);
+	}
+
+	protected AndroidFiles createFiles () {
+		this.getFilesDir(); // workaround for Android bug #10515463
+		return new DefaultAndroidFiles(this.getAssets(), this, true);
 	}
 
 	@Override

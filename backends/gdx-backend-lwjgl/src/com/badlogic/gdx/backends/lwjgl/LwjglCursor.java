@@ -4,27 +4,22 @@ package com.badlogic.gdx.backends.lwjgl;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 
+import com.badlogic.gdx.utils.Os;
 import org.lwjgl.LWJGLException;
-import org.lwjgl.input.Mouse;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Cursor;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.utils.GdxRuntimeException;
+import com.badlogic.gdx.utils.SharedLibraryLoader;
 
 public class LwjglCursor implements Cursor {
-	/** Revert to the default system cursor */
-	public static void resetCursor () {
-		try {
-			Mouse.setNativeCursor(null);
-		} catch (LWJGLException e) {
-			throw new GdxRuntimeException("Could not set cursor image.", e);
-		}
-	}
-
-	private org.lwjgl.input.Cursor lwjglCursor = null;
+	org.lwjgl.input.Cursor lwjglCursor = null;
 
 	public LwjglCursor (Pixmap pixmap, int xHotspot, int yHotspot) {
-
+		if (((LwjglGraphics)Gdx.graphics).canvas != null && SharedLibraryLoader.os == Os.MacOsX) {
+			return;
+		}
 		try {
 			if (pixmap == null) {
 				lwjglCursor = null;
@@ -36,23 +31,23 @@ public class LwjglCursor implements Cursor {
 			}
 
 			if ((pixmap.getWidth() & (pixmap.getWidth() - 1)) != 0) {
-				throw new GdxRuntimeException("Cursor image pixmap width of " + pixmap.getWidth()
-					+ " is not a power-of-two greater than zero.");
+				throw new GdxRuntimeException(
+					"Cursor image pixmap width of " + pixmap.getWidth() + " is not a power-of-two greater than zero.");
 			}
 
 			if ((pixmap.getHeight() & (pixmap.getHeight() - 1)) != 0) {
-				throw new GdxRuntimeException("Cursor image pixmap height of " + pixmap.getHeight()
-					+ " is not a power-of-two greater than zero.");
+				throw new GdxRuntimeException(
+					"Cursor image pixmap height of " + pixmap.getHeight() + " is not a power-of-two greater than zero.");
 			}
 
 			if (xHotspot < 0 || xHotspot >= pixmap.getWidth()) {
-				throw new GdxRuntimeException("xHotspot coordinate of " + xHotspot + " is not within image width bounds: [0, "
-					+ pixmap.getWidth() + ").");
+				throw new GdxRuntimeException(
+					"xHotspot coordinate of " + xHotspot + " is not within image width bounds: [0, " + pixmap.getWidth() + ").");
 			}
 
 			if (yHotspot < 0 || yHotspot >= pixmap.getHeight()) {
-				throw new GdxRuntimeException("yHotspot coordinate of " + yHotspot + " is not within image height bounds: [0, "
-					+ pixmap.getHeight() + ").");
+				throw new GdxRuntimeException(
+					"yHotspot coordinate of " + yHotspot + " is not within image height bounds: [0, " + pixmap.getHeight() + ").");
 			}
 
 			// Convert from RGBA8888 to ARGB8888 and flip vertically
@@ -79,20 +74,14 @@ public class LwjglCursor implements Cursor {
 				}
 			}
 
-			lwjglCursor = new org.lwjgl.input.Cursor(pixmap.getWidth(), pixmap.getHeight(), xHotspot, pixmap.getHeight() - yHotspot
-				- 4, 1, IntBuffer.wrap(pixelsARGBflipped), null);
+			lwjglCursor = new org.lwjgl.input.Cursor(pixmap.getWidth(), pixmap.getHeight(), xHotspot,
+				pixmap.getHeight() - yHotspot - 1, 1, IntBuffer.wrap(pixelsARGBflipped), null);
 		} catch (LWJGLException e) {
 			throw new GdxRuntimeException("Could not create cursor image.", e);
 		}
 	}
 
 	@Override
-	public void setSystemCursor () {
-		try {
-			Mouse.setNativeCursor(lwjglCursor);
-		} catch (LWJGLException e) {
-			throw new GdxRuntimeException("Could not set cursor image.", e);
-		}
+	public void dispose () {
 	}
-
 }

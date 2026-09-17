@@ -23,7 +23,8 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.utils.BufferUtils;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 
-/** <p>
+/**
+ * <p>
  * In IndexBufferObject wraps OpenGL's index buffer functionality to be used in conjunction with VBOs. This class can be
  * seamlessly used with OpenGL ES 1.x and 2.0.
  * </p>
@@ -84,7 +85,8 @@ public class IndexBufferObject implements IndexData {
 		return buffer.capacity();
 	}
 
-	/** <p>
+	/**
+	 * <p>
 	 * Sets the indices of this IndexBufferObject, discarding the old indices. The count must equal the number of indices to be
 	 * copied to this IndexBufferObject.
 	 * </p>
@@ -107,28 +109,44 @@ public class IndexBufferObject implements IndexData {
 			isDirty = false;
 		}
 	}
-	
+
 	public void setIndices (ShortBuffer indices) {
 		isDirty = true;
 		buffer.clear();
 		buffer.put(indices);
 		buffer.flip();
-		
+
 		if (isBound) {
 			Gdx.gl20.glBufferData(GL20.GL_ELEMENT_ARRAY_BUFFER, buffer.limit(), buffer, usage);
 			isDirty = false;
 		}
 	}
 
+	@Override
+	public void updateIndices (int targetOffset, short[] indices, int offset, int count) {
+		isDirty = true;
+		final int pos = buffer.position();
+		buffer.position(targetOffset);
+		BufferUtils.copy(indices, offset, buffer, count);
+		buffer.position(pos);
 
-	/** <p>
-	 * Returns the underlying ShortBuffer. If you modify the buffer contents they wil be uploaded on the call to {@link #bind()}.
-	 * If you need immediate uploading use {@link #setIndices(short[], int, int)}.
-	 * </p>
-	 * 
-	 * @return the underlying short buffer. */
+		if (isBound) {
+			Gdx.gl20.glBufferData(GL20.GL_ELEMENT_ARRAY_BUFFER, buffer.limit(), buffer, usage);
+			isDirty = false;
+		}
+	}
+
+	/** @deprecated use {@link #getBuffer(boolean)} instead */
+	@Override
+	@Deprecated
 	public ShortBuffer getBuffer () {
 		isDirty = true;
+		return buffer;
+	}
+
+	@Override
+	public ShortBuffer getBuffer (boolean forWriting) {
+		isDirty |= forWriting;
 		return buffer;
 	}
 
@@ -161,6 +179,6 @@ public class IndexBufferObject implements IndexData {
 		GL20 gl = Gdx.gl20;
 		gl.glBindBuffer(GL20.GL_ELEMENT_ARRAY_BUFFER, 0);
 		gl.glDeleteBuffer(bufferHandle);
-		bufferHandle = 0;		
+		bufferHandle = 0;
 	}
 }

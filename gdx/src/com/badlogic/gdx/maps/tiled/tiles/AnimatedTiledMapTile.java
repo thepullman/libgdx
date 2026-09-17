@@ -17,6 +17,7 @@
 package com.badlogic.gdx.maps.tiled.tiles;
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.maps.MapObjects;
 import com.badlogic.gdx.maps.MapProperties;
 import com.badlogic.gdx.maps.tiled.TiledMapTile;
 import com.badlogic.gdx.utils.Array;
@@ -35,10 +36,11 @@ public class AnimatedTiledMapTile implements TiledMapTile {
 
 	private MapProperties properties;
 
+	private MapObjects objects;
+
 	private StaticTiledMapTile[] frameTiles;
 
 	private int[] animationIntervals;
-	private int frameCount = 0;
 	private int loopDuration;
 	private static final long initialTimeOffset = TimeUtils.millis();
 
@@ -123,8 +125,8 @@ public class AnimatedTiledMapTile implements TiledMapTile {
 			}
 
 		} else {
-			throw new GdxRuntimeException("Cannot set " + intervals.length
-				+ " frame intervals. The given int[] must have a size of " + animationIntervals.length + ".");
+			throw new GdxRuntimeException("Cannot set " + intervals.length + " frame intervals. The given int[] must have a size of "
+				+ animationIntervals.length + ".");
 		}
 	}
 
@@ -134,6 +136,14 @@ public class AnimatedTiledMapTile implements TiledMapTile {
 			properties = new MapProperties();
 		}
 		return properties;
+	}
+
+	@Override
+	public MapObjects getObjects () {
+		if (objects == null) {
+			objects = new MapObjects();
+		}
+		return objects;
 	}
 
 	/** Function is called by BatchTiledMapRenderer render(), lastTiledMapRenderTime is used to keep all of the tiles in lock-step
@@ -148,7 +158,6 @@ public class AnimatedTiledMapTile implements TiledMapTile {
 	 * @param frameTiles An array of {@link StaticTiledMapTile}s that make up the animation. */
 	public AnimatedTiledMapTile (float interval, Array<StaticTiledMapTile> frameTiles) {
 		this.frameTiles = new StaticTiledMapTile[frameTiles.size];
-		this.frameCount = frameTiles.size;
 
 		this.loopDuration = frameTiles.size * (int)(interval * 1000f);
 		this.animationIntervals = new int[frameTiles.size];
@@ -164,7 +173,6 @@ public class AnimatedTiledMapTile implements TiledMapTile {
 	 * @param frameTiles An array of {@link StaticTiledMapTile}s that make up the animation. */
 	public AnimatedTiledMapTile (IntArray intervals, Array<StaticTiledMapTile> frameTiles) {
 		this.frameTiles = new StaticTiledMapTile[frameTiles.size];
-		this.frameCount = frameTiles.size;
 
 		this.animationIntervals = intervals.toArray();
 		this.loopDuration = 0;

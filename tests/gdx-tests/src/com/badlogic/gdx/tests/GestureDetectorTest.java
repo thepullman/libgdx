@@ -88,7 +88,8 @@ public class GestureDetectorTest extends GdxTest implements ApplicationListener 
 		}
 
 		@Override
-		public boolean pinch (Vector2 initialFirstPointer, Vector2 initialSecondPointer, Vector2 firstPointer, Vector2 secondPointer) {
+		public boolean pinch (Vector2 initialFirstPointer, Vector2 initialSecondPointer, Vector2 firstPointer,
+			Vector2 secondPointer) {
 			return false;
 		}
 
@@ -101,6 +102,10 @@ public class GestureDetectorTest extends GdxTest implements ApplicationListener 
 				if (Math.abs(velY) < 0.01f) velY = 0;
 			}
 		}
+
+		@Override
+		public void pinchStop () {
+		}
 	}
 
 	@Override
@@ -109,7 +114,7 @@ public class GestureDetectorTest extends GdxTest implements ApplicationListener 
 		batch = new SpriteBatch();
 		camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		controller = new CameraController();
-		gestureDetector = new GestureDetector(20, 0.5f, 2, 0.15f, controller);
+		gestureDetector = new GestureDetector(20, 40, 0.5f, 2, 0.15f, controller);
 		Gdx.input.setInputProcessor(gestureDetector);
 	}
 

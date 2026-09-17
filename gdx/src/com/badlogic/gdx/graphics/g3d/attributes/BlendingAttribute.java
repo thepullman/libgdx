@@ -29,8 +29,8 @@ public class BlendingAttribute extends Attribute {
 		return (mask & Type) == mask;
 	}
 
-	/** Whether this material should be considered blended (default: true). This is used for sorting (back to front instead of front
-	 * to back). */
+	/** Whether this material should be considered blended (default: true). This is used for sorting (back to front instead of
+	 * front to back). */
 	public boolean blended;
 	/** Specifies how the (incoming) red, green, blue, and alpha source blending factors are computed (default: GL_SRC_ALPHA) */
 	public int sourceFunction;
@@ -69,7 +69,7 @@ public class BlendingAttribute extends Attribute {
 	}
 
 	public BlendingAttribute (final BlendingAttribute copyFrom) {
-		this(copyFrom == null ? true : copyFrom.blended, copyFrom == null ? GL20.GL_SRC_ALPHA : copyFrom.sourceFunction,
+		this(copyFrom == null || copyFrom.blended, copyFrom == null ? GL20.GL_SRC_ALPHA : copyFrom.sourceFunction,
 			copyFrom == null ? GL20.GL_ONE_MINUS_SRC_ALPHA : copyFrom.destFunction, copyFrom == null ? 1.f : copyFrom.opacity);
 	}
 

@@ -18,7 +18,8 @@ package com.badlogic.gdx;
 
 import com.badlogic.gdx.utils.Clipboard;
 
-/** <p>
+/**
+ * <p>
  * An <code>Application</code> is the main entry point of your project. It sets up a window and rendering surface and manages the
  * different aspects of your application, namely {@link Graphics}, {@link Audio}, {@link Input} and {@link Files}. Think of an
  * Application being equivalent to Swing's <code>JFrame</code> or Android's <code>Activity</code>.
@@ -37,7 +38,7 @@ import com.badlogic.gdx.utils.Clipboard;
  * </p>
  * 
  * <p>
- * While game programmers are used to having a main loop, libgdx employs a different concept to accommodate the event based nature
+ * While game programmers are used to having a main loop, libGDX employs a different concept to accommodate the event based nature
  * of Android applications a little more. You application logic must be implemented in a {@link ApplicationListener} which has
  * methods that get called by the Application when the application is created, resumed, paused, disposed or rendered. As a
  * developer you will simply implement the ApplicationListener interface and fill in the functionality accordingly. The
@@ -85,7 +86,7 @@ import com.badlogic.gdx.utils.Clipboard;
  * <p>
  * The <code>Application</code> also has a set of methods that you can use to query specific information such as the operating
  * system the application is currently running on and so forth. This allows you to have operating system dependent code paths. It
- * is however not recommended to use this facilities.
+ * is however not recommended to use these facilities.
  * </p>
  * 
  * <p>
@@ -99,7 +100,10 @@ public interface Application {
 	 * 
 	 * @author mzechner */
 	public enum ApplicationType {
-		Android, Desktop, HeadlessDesktop, Applet, WebGL, iOS
+		Android, Desktop, HeadlessDesktop,
+		/** @deprecated Java applets are no longer supported; no backend returns this type. */
+		@Deprecated
+		Applet, WebGL, iOS
 	}
 
 	public static final int LOG_NONE = 0;
@@ -151,6 +155,13 @@ public interface Application {
 	/** Gets the log level. */
 	public int getLogLevel ();
 
+	/** Sets the current Application logger. Calls to {@link #log(String, String)} are delegated to this
+	 * {@link ApplicationLogger} */
+	public void setApplicationLogger (ApplicationLogger applicationLogger);
+
+	/** @return the current {@link ApplicationLogger} */
+	public ApplicationLogger getApplicationLogger ();
+
 	/** @return what {@link ApplicationType} this application has, e.g. Android or Desktop */
 	public ApplicationType getType ();
 
@@ -172,12 +183,18 @@ public interface Application {
 
 	/** Posts a {@link Runnable} on the main loop thread.
 	 * 
+	 * In a multi-window application, the {@linkplain Gdx#graphics} and {@linkplain Gdx#input} values may be unpredictable at the
+	 * time the Runnable is executed. If graphics or input are needed, they can be copied to a variable to be used in the Runnable.
+	 * For example:
+	 * <p>
+	 * <code> final Graphics graphics = Gdx.graphics;
+	 * 
 	 * @param runnable the runnable. */
 	public void postRunnable (Runnable runnable);
 
 	/** Schedule an exit from the application. On android, this will cause a call to pause() and dispose() some time in the future,
-	 * it will not immediately finish your application.
-	 * On iOS this should be avoided in production as it breaks Apples guidelines*/
+	 * it will not immediately finish your application. On iOS this should be avoided in production as it breaks Apples
+	 * guidelines */
 	public void exit ();
 
 	/** Adds a new {@link LifecycleListener} to the application. This can be used by extensions to hook into the lifecycle more

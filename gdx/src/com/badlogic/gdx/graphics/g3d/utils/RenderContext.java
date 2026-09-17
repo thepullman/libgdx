@@ -27,8 +27,10 @@ public class RenderContext {
 	/** used to bind textures **/
 	public final TextureBinder textureBinder;
 	private boolean blending;
-	private int blendSFactor;
-	private int blendDFactor;
+	private int blendSourceRgbFactor;
+	private int blendDestRgbFactor;
+	private int blendSourceAlphaFactor;
+	private int blendDestAlphaFactor;
 	private int depthFunc;
 	private float depthRangeNear;
 	private float depthRangeFar;
@@ -39,8 +41,7 @@ public class RenderContext {
 		this.textureBinder = textures;
 	}
 
-	/** Sets up the render context, must be matched with a call to {@link #end()}. Assumes that the OpenGL states are in their
-	 * defaults. */
+	/** Sets up the render context, must be matched with a call to {@link #end()}. */
 	public void begin () {
 		Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
 		depthFunc = 0;
@@ -49,7 +50,7 @@ public class RenderContext {
 		Gdx.gl.glDisable(GL20.GL_BLEND);
 		blending = false;
 		Gdx.gl.glDisable(GL20.GL_CULL_FACE);
-		cullFace = blendSFactor = blendDFactor = 0;
+		cullFace = blendSourceRgbFactor = blendDestRgbFactor = blendSourceAlphaFactor = blendDestAlphaFactor = 0;
 		textureBinder.begin();
 	}
 
@@ -89,6 +90,11 @@ public class RenderContext {
 	}
 
 	public void setBlending (final boolean enabled, final int sFactor, final int dFactor) {
+		setBlending(enabled, sFactor, dFactor, sFactor, dFactor);
+	}
+
+	public void setBlending (final boolean enabled, final int sRgbFactor, final int dRgbFactor, final int sAlphaFactor,
+		final int dAlphaFactor) {
 		if (enabled != blending) {
 			blending = enabled;
 			if (enabled)
@@ -96,10 +102,13 @@ public class RenderContext {
 			else
 				Gdx.gl.glDisable(GL20.GL_BLEND);
 		}
-		if (enabled && (blendSFactor != sFactor || blendDFactor != dFactor)) {
-			Gdx.gl.glBlendFunc(sFactor, dFactor);
-			blendSFactor = sFactor;
-			blendDFactor = dFactor;
+		if (enabled && (blendSourceRgbFactor != sRgbFactor || blendDestRgbFactor != dRgbFactor
+			|| blendSourceAlphaFactor != sAlphaFactor || blendDestAlphaFactor != dAlphaFactor)) {
+			Gdx.gl.glBlendFuncSeparate(sRgbFactor, dRgbFactor, sAlphaFactor, dAlphaFactor);
+			blendSourceRgbFactor = sRgbFactor;
+			blendDestRgbFactor = dRgbFactor;
+			blendSourceAlphaFactor = sAlphaFactor;
+			blendDestAlphaFactor = dAlphaFactor;
 		}
 	}
 

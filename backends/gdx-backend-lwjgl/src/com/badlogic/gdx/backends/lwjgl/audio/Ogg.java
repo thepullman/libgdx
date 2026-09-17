@@ -27,17 +27,17 @@ public class Ogg {
 		private OggInputStream input;
 		private OggInputStream previousInput;
 
-		public Music (OpenALAudio audio, FileHandle file) {
+		public Music (OpenALLwjglAudio audio, FileHandle file) {
 			super(audio, file);
 			if (audio.noDevice) return;
 			input = new OggInputStream(file.read());
-			setup(input.getChannels(), input.getSampleRate());
+			setup(input.getChannels(), 16, input.getSampleRate());
 		}
 
 		public int read (byte[] buffer) {
 			if (input == null) {
 				input = new OggInputStream(file.read(), previousInput);
-				setup(input.getChannels(), input.getSampleRate());
+				setup(input.getChannels(), 16, input.getSampleRate());
 				previousInput = null; // release this reference
 			}
 			return input.read(buffer);
@@ -58,7 +58,7 @@ public class Ogg {
 	}
 
 	static public class Sound extends OpenALSound {
-		public Sound (OpenALAudio audio, FileHandle file) {
+		public Sound (OpenALLwjglAudio audio, FileHandle file) {
 			super(audio);
 			if (audio.noDevice) return;
 			OggInputStream input = null;
@@ -71,7 +71,7 @@ public class Ogg {
 					if (length == -1) break;
 					output.write(buffer, 0, length);
 				}
-				setup(output.toByteArray(), input.getChannels(), input.getSampleRate());
+				setup(output.toByteArray(), input.getChannels(), 16, input.getSampleRate());
 			} finally {
 				StreamUtils.closeQuietly(input);
 			}

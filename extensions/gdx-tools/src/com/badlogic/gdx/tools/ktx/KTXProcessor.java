@@ -4,6 +4,7 @@ package com.badlogic.gdx.tools.ktx;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.zip.GZIPOutputStream;
 
@@ -26,12 +27,12 @@ import com.badlogic.gdx.utils.GdxRuntimeException;
 
 public class KTXProcessor {
 
-	final static byte[] HEADER_MAGIC = {(byte)0x0AB, (byte)0x04B, (byte)0x054, (byte)0x058, (byte)0x020, (byte)0x031,
-		(byte)0x031, (byte)0x0BB, (byte)0x00D, (byte)0x00A, (byte)0x01A, (byte)0x00A};
+	final static byte[] HEADER_MAGIC = {(byte)0x0AB, (byte)0x04B, (byte)0x054, (byte)0x058, (byte)0x020, (byte)0x031, (byte)0x031,
+		(byte)0x0BB, (byte)0x00D, (byte)0x00A, (byte)0x01A, (byte)0x00A};
 
 	public static void convert (String input, String output, boolean genMipmaps, boolean packETC1, boolean genAlphaAtlas)
 		throws Exception {
-		Array<String> opts = new Array<String>(String.class);
+		Array<String> opts = new Array<>(String[]::new);
 		opts.add(input);
 		opts.add(output);
 		if (genMipmaps) opts.add("-mipmaps");
@@ -42,7 +43,7 @@ public class KTXProcessor {
 
 	public static void convert (String inPx, String inNx, String inPy, String inNy, String inPz, String inNz, String output,
 		boolean genMipmaps, boolean packETC1, boolean genAlphaAtlas) throws Exception {
-		Array<String> opts = new Array<String>(String.class);
+		Array<String> opts = new Array<>(String[]::new);
 		opts.add(inPx);
 		opts.add(inNx);
 		opts.add(inPy);
@@ -80,28 +81,28 @@ public class KTXProcessor {
 			if (!isCubemap && !isTexture) {
 				System.out.println("usage : KTXProcessor input_file output_file [-etc1|-etc1a] [-mipmaps]");
 				System.out.println("  input_file  is the texture file to include in the output KTX or ZKTX file.");
-				System.out
-					.println("              for cube map, just provide 6 input files corresponding to the faces in the following order : X+, X-, Y+, Y-, Z+, Z-");
-				System.out
-					.println("  output_file is the path to the output file, its type is based on the extension which must be either KTX or ZKTX");
+				System.out.println(
+					"              for cube map, just provide 6 input files corresponding to the faces in the following order : X+, X-, Y+, Y-, Z+, Z-");
+				System.out.println(
+					"  output_file is the path to the output file, its type is based on the extension which must be either KTX or ZKTX");
 				System.out.println();
 				System.out.println("  options:");
 				System.out.println("    -etc1    input file will be packed using ETC1 compression, dropping the alpha channel");
-				System.out
-					.println("    -etc1a   input file will be packed using ETC1 compression, doubling the height and placing the alpha channel in the bottom half");
+				System.out.println(
+					"    -etc1a   input file will be packed using ETC1 compression, doubling the height and placing the alpha channel in the bottom half");
 				System.out.println("    -mipmaps input file will be processed to generate mipmaps");
 				System.out.println();
 				System.out.println("  examples:");
-				System.out
-					.println("    KTXProcessor in.png out.ktx                                        Create a KTX file with the provided 2D texture");
-				System.out
-					.println("    KTXProcessor in.png out.zktx                                       Create a Zipped KTX file with the provided 2D texture");
-				System.out
-					.println("    KTXProcessor in.png out.zktx -mipmaps                              Create a Zipped KTX file with the provided 2D texture, generating all mipmap levels");
-				System.out
-					.println("    KTXProcessor px.ktx nx.ktx py.ktx ny.ktx pz.ktx nz.ktx out.zktx    Create a Zipped KTX file with the provided cubemap textures");
-				System.out
-					.println("    KTXProcessor in.ktx out.zktx                                       Convert a KTX file to a Zipped KTX file");
+				System.out.println(
+					"    KTXProcessor in.png out.ktx                                        Create a KTX file with the provided 2D texture");
+				System.out.println(
+					"    KTXProcessor in.png out.zktx                                       Create a Zipped KTX file with the provided 2D texture");
+				System.out.println(
+					"    KTXProcessor in.png out.zktx -mipmaps                              Create a Zipped KTX file with the provided 2D texture, generating all mipmap levels");
+				System.out.println(
+					"    KTXProcessor px.ktx nx.ktx py.ktx ny.ktx pz.ktx nz.ktx out.zktx    Create a Zipped KTX file with the provided cubemap textures");
+				System.out.println(
+					"    KTXProcessor in.ktx out.zktx                                       Convert a KTX file to a Zipped KTX file");
 				System.exit(-1);
 			}
 
@@ -132,8 +133,6 @@ public class KTXProcessor {
 			// Process all faces
 			int nFaces = isCubemap ? 6 : 1;
 			Image[][] images = new Image[nFaces][];
-			Pixmap.setBlending(Blending.None);
-			Pixmap.setFilter(Filter.BiLinear);
 			int texWidth = -1, texHeight = -1, texFormat = -1, nLevels = 0;
 			for (int face = 0; face < nFaces; face++) {
 				ETC1Data etc1 = null;
@@ -164,14 +163,15 @@ public class KTXProcessor {
 						texHeight = etc1.height;
 					} else {
 						facePixmap = new Pixmap(file);
+						facePixmap.setBlending(Blending.None);
+						facePixmap.setFilter(Filter.BiLinear);
 						nLevels = 1;
 						texWidth = facePixmap.getWidth();
 						texHeight = facePixmap.getHeight();
 					}
 					if (isGenMipMaps) {
-						if (!MathUtils.isPowerOfTwo(texWidth) || !MathUtils.isPowerOfTwo(texHeight))
-							throw new GdxRuntimeException(
-								"Invalid input : mipmap generation is only available for power of two textures : " + file);
+						if (!MathUtils.isPowerOfTwo(texWidth) || !MathUtils.isPowerOfTwo(texHeight)) throw new GdxRuntimeException(
+							"Invalid input : mipmap generation is only available for power of two textures : " + file);
 						nLevels = Math.max(Integer.SIZE - Integer.numberOfLeadingZeros(texWidth),
 							Integer.SIZE - Integer.numberOfLeadingZeros(texHeight));
 					}
@@ -204,6 +204,8 @@ public class KTXProcessor {
 					}
 					if (levelETCData == null) {
 						levelPixmap = new Pixmap(levelWidth, levelHeight, facePixmap.getFormat());
+						levelPixmap.setBlending(Blending.None);
+						levelPixmap.setFilter(Filter.BiLinear);
 						levelPixmap.drawPixmap(facePixmap, 0, 0, facePixmap.getWidth(), facePixmap.getHeight(), 0, 0,
 							levelPixmap.getWidth(), levelPixmap.getHeight());
 					}
@@ -215,6 +217,8 @@ public class KTXProcessor {
 						if (levelPixmap == null) levelPixmap = ETC1.decodeImage(levelETCData, Format.RGB888);
 						int w = levelPixmap.getWidth(), h = levelPixmap.getHeight();
 						Pixmap pm = new Pixmap(w, h * 2, levelPixmap.getFormat());
+						pm.setBlending(Blending.None);
+						pm.setFilter(Filter.BiLinear);
 						pm.drawPixmap(levelPixmap, 0, 0);
 						for (int y = 0; y < h; y++) {
 							for (int x = 0; x < w; x++) {
@@ -233,6 +237,8 @@ public class KTXProcessor {
 							if (!isAlphaAtlas)
 								System.out.println("Converting from " + levelPixmap.getFormat() + " to RGB888 for ETC1 compression");
 							Pixmap tmp = new Pixmap(levelPixmap.getWidth(), levelPixmap.getHeight(), Format.RGB888);
+							tmp.setBlending(Blending.None);
+							tmp.setFilter(Filter.BiLinear);
 							tmp.drawPixmap(levelPixmap, 0, 0, 0, 0, levelPixmap.getWidth(), levelPixmap.getHeight());
 							levelPixmap.dispose();
 							levelPixmap = tmp;
@@ -331,9 +337,12 @@ public class KTXProcessor {
 				}
 
 				out.close();
+				System.out.println("Finished");
 			} catch (Exception e) {
 				Gdx.app.error("KTXProcessor", "Error writing to file: " + output.getName(), e);
 			}
+
+			Gdx.app.exit();
 		}
 	}
 
@@ -353,7 +362,7 @@ public class KTXProcessor {
 		public byte[] getBytes () {
 			if (etcData != null) {
 				byte[] result = new byte[getSize()];
-				etcData.compressedData.position(etcData.dataOffset);
+				((Buffer)etcData.compressedData).position(etcData.dataOffset);
 				etcData.compressedData.get(result);
 				return result;
 			}

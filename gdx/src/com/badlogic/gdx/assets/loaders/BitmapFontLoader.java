@@ -16,7 +16,6 @@
 
 package com.badlogic.gdx.assets.loaders;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetDescriptor;
 import com.badlogic.gdx.assets.AssetLoaderParameters;
 import com.badlogic.gdx.assets.AssetManager;
@@ -51,7 +50,7 @@ public class BitmapFontLoader extends AsynchronousAssetLoader<BitmapFont, Bitmap
 			return deps;
 		}
 
-		data = new BitmapFontData(file, parameter != null ? parameter.flip : false);
+		data = new BitmapFontData(file, parameter != null && parameter.flip);
 		if (parameter != null && parameter.atlasName != null) {
 			deps.add(new AssetDescriptor(parameter.atlasName, TextureAtlas.class));
 		} else {
@@ -119,8 +118,8 @@ public class BitmapFontLoader extends AsynchronousAssetLoader<BitmapFont, Bitmap
 		 * embedded in a {@link Skin}. **/
 		public BitmapFontData bitmapFontData = null;
 
-		/** The name of the {@link TextureAtlas} to load the {@link BitmapFont} itself from. Optional; if {@code null}, will look for
-		 * a separate image */
+		/** The name of the {@link TextureAtlas} to load the {@link BitmapFont} itself from. Optional; if {@code null}, will look
+		 * for a separate image */
 		public String atlasName = null;
 	}
 }

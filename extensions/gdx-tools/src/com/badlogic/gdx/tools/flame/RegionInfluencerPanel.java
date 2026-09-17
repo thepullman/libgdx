@@ -1,3 +1,4 @@
+
 package com.badlogic.gdx.tools.flame;
 
 import java.awt.GridBagConstraints;
@@ -18,40 +19,41 @@ import com.badlogic.gdx.utils.Array;
 public class RegionInfluencerPanel extends InfluencerPanel<RegionInfluencer> implements RegionPickerPanel.Listener {
 	JDialog regionSelectDialog;
 	RegionPickerPanel regionPickerPanel;
-	
+
 	public RegionInfluencerPanel (FlameMain editor, String name, String desc, RegionInfluencer influencer) {
 		super(editor, influencer, name, desc);
 		setValue(influencer);
 	}
-	
+
 	@Override
 	protected void initializeComponents () {
 		super.initializeComponents();
-		
+
 		JButton pickButton;
 		regionSelectDialog = new JDialog(editor, "Pick regions", true);
 		regionPickerPanel = new RegionPickerPanel(this);
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.setViewportView(regionPickerPanel);
 		regionSelectDialog.setContentPane(scrollPane);
-		regionSelectDialog.setDefaultCloseOperation( JDialog.HIDE_ON_CLOSE);
+		regionSelectDialog.setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
 
 		addContent(0, 0, pickButton = new JButton("Pick Regions"), false, GridBagConstraints.WEST, GridBagConstraints.NONE);
 
 		pickButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed (ActionEvent arg0) {
-				if(editor.isUsingDefaultTexture()) {
+				if (editor.isUsingDefaultTexture()) {
 					JOptionPane.showMessageDialog(editor, "Load a Texture or an Atlas first.");
 					return;
 				}
-				
+
 				TextureAtlas atlas = editor.getAtlas();
-				if(atlas != null)
-					regionPickerPanel.setAtlas(atlas);
-				else 
+				String atlasFilename = editor.getAtlasFilename();
+				if (atlas != null)
+					regionPickerPanel.setAtlas(atlas, atlasFilename);
+				else
 					regionPickerPanel.setTexture(editor.getTexture());
-				
+
 				regionPickerPanel.revalidate();
 				regionPickerPanel.repaint();
 				regionSelectDialog.validate();
@@ -63,11 +65,12 @@ public class RegionInfluencerPanel extends InfluencerPanel<RegionInfluencer> imp
 	}
 
 	@Override
-	public void onRegionsSelected (Array<TextureRegion> regions) {
+	public void onRegionsSelected (Array<TextureRegion> regions, String atlasName) {
 		regionSelectDialog.setVisible(false);
-		if(regions.size == 0) return;
+		if (regions.size == 0) return;
 		value.clear();
-		value.add((TextureRegion[])regions.toArray(TextureRegion.class));
+		value.setAtlasName(atlasName);
+		value.add(regions.toArray(TextureRegion[]::new));
 		editor.setTexture(regions.get(0).getTexture());
 		editor.restart();
 	}
